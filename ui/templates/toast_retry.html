@@ -1,0 +1,8 @@
+<div class="bg-amber-900/40 border border-amber-500/50 text-amber-200 px-5 py-4 rounded-xl shadow-2xl flex items-center transform transition-all pointer-events-auto" id="toast-{{.ToastID}}">
+    <svg class="w-5 h-5 mr-3 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+    <div class="flex flex-col">
+        <span class="font-semibold tracking-wide">{{.AgentName}} hit a rate limit.</span>
+        <span class="text-sm text-amber-500/80">Retrying in {{.Backoff}} (Attempt {{.Attempt}}/{{.MaxRetries}})</span>
+    </div>
+</div>
+<script>setTimeout(() => { let el = document.getElementById('toast-{{.ToastID}}'); if(el) { el.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => el.remove(), 300); } }, 6000);</script>

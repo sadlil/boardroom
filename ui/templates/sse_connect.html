@@ -1,0 +1,20 @@
+{{- /*gotype: github.com/sadlil/boardroom/internal/server.SSEConnectData*/ -}}
+<script>
+(function() {
+    var knownEvents = ['user_persona','macroeconomist','optimist','pessimist','analyst','recruiter','decider','toast','dynamic_panel'];
+    var es = new EventSource('/api/stream?id={{.SessionID}}');
+    function handler(e) {
+        var evt = new CustomEvent('boardroom:sse', { detail: { type: e.type, data: e.data } });
+        document.body.dispatchEvent(evt);
+    }
+    knownEvents.forEach(function(name) { es.addEventListener(name, handler); });
+    // Expose a global function so the dynamic_panel handler can immediately register new agent listeners
+    window.__registerDynAgent = function(name) {
+        if (knownEvents.indexOf(name) === -1) {
+            es.addEventListener(name, handler);
+            knownEvents.push(name);
+        }
+    };
+    es.onerror = function() { es.close(); };
+})();
+</script>

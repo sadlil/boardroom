@@ -1,0 +1,108 @@
+<div class="max-w-3xl mx-auto animate-fade-in relative z-10">
+    <div class="bg-zinc-900/80 rounded-2xl p-8 mb-10 border border-indigo-500/30 shadow-2xl shadow-black/40 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-indigo-500/80 to-indigo-400/20"></div>
+
+        <!-- Header -->
+        <div class="flex flex-col items-center mb-8 pb-6 border-b border-zinc-800/60 text-center">
+            <div class="w-14 h-14 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 mb-4">
+                <svg class="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-zinc-100 tracking-tight mb-2">Build Your Executive Profile</h3>
+            <p class="text-zinc-500 text-sm max-w-md leading-relaxed">
+                The more context you provide, the sharper your board's analysis will be.
+                Pull details from your <span class="text-indigo-400 font-medium">CV</span>, 
+                <span class="text-indigo-400 font-medium">LinkedIn</span>, 
+                <span class="text-indigo-400 font-medium">social media bios</span>, or just describe yourself in your own words.
+            </p>
+        </div>
+
+        <!-- Privacy Badge -->
+        <div class="mb-8 px-5 py-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl flex items-center gap-3 animate-pulse-subtle">
+            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            </div>
+            <p class="text-indigo-300/90 text-xs font-medium leading-relaxed">
+                Your profile is stored <span class="text-indigo-400 underline decoration-indigo-400/30 underline-offset-2">locally</span> and never shared. 
+                It anchors every board debate to your real-world context for maximum relevance.
+            </p>
+        </div>
+
+        <form hx-post="/api/onboard" hx-target="#app-container" hx-swap="innerHTML" class="flex flex-col gap-5">
+
+            <!-- Row 1: Role & Industry -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Current Role / Title</label>
+                    <input type="text" name="role" placeholder="e.g. Founder & CEO, Product Manager, Software Engineer"
+                        class="w-full bg-zinc-950/60 border border-zinc-800/50 rounded-xl px-4 py-2.5 text-zinc-200 focus:outline-none focus:border-indigo-500/40 transition-colors text-sm" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Industry / Domain</label>
+                    <input type="text" name="industry" placeholder="e.g. SaaS, Fintech, Healthcare, E-commerce"
+                        class="w-full bg-zinc-950/60 border border-zinc-800/50 rounded-xl px-4 py-2.5 text-zinc-200 focus:outline-none focus:border-indigo-500/40 transition-colors text-sm" required>
+                </div>
+            </div>
+
+            <!-- Row 2: Experience & Risk Tolerance -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Years of Experience</label>
+                    <select name="experience_level"
+                        class="w-full bg-zinc-950/60 border border-zinc-800/50 rounded-xl px-4 py-2.5 text-zinc-200 focus:outline-none focus:border-indigo-500/40 transition-colors text-sm appearance-none">
+                        <option value="early_career">Early Career (0–3 years)</option>
+                        <option value="mid_career" selected>Mid Career (4–10 years)</option>
+                        <option value="senior">Senior (10–20 years)</option>
+                        <option value="executive">Executive / C-Suite (20+ years)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Risk Tolerance</label>
+                    <select name="risk_tolerance"
+                        class="w-full bg-zinc-950/60 border border-zinc-800/50 rounded-xl px-4 py-2.5 text-zinc-200 focus:outline-none focus:border-indigo-500/40 transition-colors text-sm appearance-none">
+                        <option value="conservative">Conservative — Minimize downside</option>
+                        <option value="moderate" selected>Moderate — Balanced risk/reward</option>
+                        <option value="aggressive">Aggressive — Maximize upside</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Goals -->
+            <div>
+                <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Primary Goals & Objectives</label>
+                <textarea name="goals" placeholder="What are you working toward right now? e.g. Scaling revenue to $1M ARR, transitioning from IC to management, building a personal brand, saving for early retirement..."
+                    rows="2"
+                    class="w-full bg-zinc-950/60 border border-zinc-800/50 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-indigo-500/40 transition-colors text-sm resize-none" required></textarea>
+            </div>
+
+            <!-- Constraints -->
+            <div>
+                <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Key Constraints & Considerations</label>
+                <textarea name="constraints" placeholder="e.g. Limited budget ($50k runway), family obligations, visa restrictions, existing contractual commitments, health considerations..."
+                    rows="2"
+                    class="w-full bg-zinc-950/60 border border-zinc-800/50 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-indigo-500/40 transition-colors text-sm resize-none"></textarea>
+            </div>
+
+            <!-- Background Summary -->
+            <div>
+                <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+                    Background Summary
+                    <span class="text-zinc-600 normal-case font-normal tracking-normal ml-1">— paste from your CV, LinkedIn, or bio</span>
+                </label>
+                <textarea name="background" placeholder="Summarize your professional background, key achievements, skills, education, and anything else that defines your decision-making context. The more detail you provide here, the better your board performs.
+
+Tip: Copy your LinkedIn 'About' section, or ask ChatGPT to summarize your CV into a paragraph."
+                    rows="5"
+                    class="w-full bg-zinc-950/60 border border-zinc-800/50 rounded-xl px-4 py-3 text-zinc-200 focus:outline-none focus:border-indigo-500/40 transition-colors text-sm resize-none"></textarea>
+            </div>
+
+            <!-- Submit -->
+            <div class="flex items-center justify-between pt-3 border-t border-zinc-800/40">
+                <p class="text-zinc-600 text-xs max-w-xs">You can refine your profile anytime. The board learns more about you after every debate.</p>
+                <button type="submit" class="bg-indigo-500 hover:bg-indigo-400 text-white outline-none font-semibold tracking-wide py-2.5 px-8 rounded-xl shadow-lg shadow-indigo-500/15 transition-all transform hover:scale-[1.02] active:scale-95 flex items-center flex-shrink-0">
+                    <span>Launch Boardroom</span>
+                    <svg class="w-4 h-4 ml-2 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

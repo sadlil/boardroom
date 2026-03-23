@@ -1,0 +1,128 @@
+{{- /*gotype: github.com/sadlil/boardroom/internal/server.BoardData*/ -}}
+<div class="space-y-6 animate-fade-in w-full max-w-6xl mx-auto pb-24">
+    <!-- WAVE 1: Context Analysis -->
+    <details class="group bg-zinc-900/40 border border-zinc-800/60 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:border-zinc-700/60" open id="wave1-details">
+        <summary class="px-6 py-4 text-zinc-400 font-semibold flex items-center cursor-pointer hover:text-zinc-200 transition-colors list-none outline-none">
+            <svg class="w-4 h-4 mr-3 text-zinc-600 group-open:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            <span class="text-xs uppercase tracking-widest">Context Analysis</span>
+            <span class="ml-3 text-[10px] text-zinc-600 font-normal tracking-wide hidden sm:inline">Understanding your situation</span>
+        </summary>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 pb-6">
+            <!-- User Persona -->
+            <div class="bg-zinc-950/60 p-5 rounded-xl border border-zinc-800/50 relative overflow-hidden group/card hover:border-blue-500/30 transition-colors">
+                <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-500/60 to-blue-400/20"></div>
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center mr-3 flex-shrink-0">
+                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-zinc-200 font-semibold text-sm">Chief of Staff</h4>
+                        <p class="text-zinc-600 text-[10px] uppercase tracking-widest">User Profile</p>
+                    </div>
+                    <div class="ml-auto w-2 h-2 rounded-full bg-blue-500 {{.PulseClass}}"></div>
+                </div>
+                <div class="text-zinc-400 font-sans prose prose-invert prose-zinc prose-sm overflow-y-auto max-h-64 pr-2" id="user_persona-stream">
+                    <span class="placeholder-text text-zinc-600 text-sm">Analyzing your profile and past decision patterns…</span>
+                </div>
+            </div>
+            <!-- Macro Trends -->
+            <div class="bg-zinc-950/60 p-5 rounded-xl border border-zinc-800/50 relative overflow-hidden group/card hover:border-purple-500/30 transition-colors">
+                <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-500/60 to-purple-400/20"></div>
+                <div class="flex items-center mb-4">
+                    <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center mr-3 flex-shrink-0">
+                        <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-zinc-200 font-semibold text-sm">Chief Economist</h4>
+                        <p class="text-zinc-600 text-[10px] uppercase tracking-widest">Macro Trends</p>
+                    </div>
+                    <div class="ml-auto w-2 h-2 rounded-full bg-purple-500 {{.PulseClass}}"></div>
+                </div>
+                <div class="text-zinc-400 font-sans prose prose-invert prose-zinc prose-sm overflow-y-auto max-h-64 pr-2" id="macroeconomist-stream">
+                    <span class="placeholder-text text-zinc-600 text-sm">Scanning market conditions and economic indicators…</span>
+                </div>
+            </div>
+        </div>
+    </details>
+
+    <!-- WAVE 2: Board Debate -->
+    <details class="group bg-zinc-900/40 border border-zinc-800/60 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:border-zinc-700/60" open id="wave2-details">
+        <summary class="px-6 py-4 text-zinc-400 font-semibold flex items-center cursor-pointer hover:text-zinc-200 transition-colors list-none outline-none">
+            <svg class="w-4 h-4 mr-3 text-zinc-600 group-open:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            <span class="text-xs uppercase tracking-widest">Board Debate</span>
+            <span class="ml-3 text-[10px] text-zinc-600 font-normal tracking-wide hidden sm:inline">Your advisors weigh in from opposing perspectives</span>
+        </summary>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-fr px-6 pb-6" id="wave2-grid">
+            {{range .AgentPanels}}
+            <div class="bg-zinc-950/60 rounded-xl p-5 relative group/box border border-{{.Color}}-500/20 flex flex-col transition-all duration-300 hover:border-{{.Color}}-500/40 hover:shadow-lg hover:shadow-{{.Color}}-500/5">
+                <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-{{.Color}}-500/60 to-transparent"></div>
+                <div class="flex items-center mb-4 pb-3 border-b border-zinc-800/50">
+                    <div class="w-2 h-2 rounded-full flex-shrink-0 bg-{{.Color}}-500 {{$.PulseClass}} shadow-sm shadow-{{.Color}}-500/50 mr-3"></div>
+                    <h3 class="font-semibold text-zinc-200 text-sm truncate uppercase tracking-wide">{{.Title}}</h3>
+                </div>
+                <div class="text-zinc-400 font-sans prose prose-invert prose-zinc prose-sm leading-relaxed overflow-y-auto max-h-[32rem] flex-1 pr-2" id="{{.ID}}-stream">
+                    <span class="text-zinc-600 italic placeholder-text text-sm">Preparing analysis…</span>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </details>
+
+    {{if .UseDynamicAgents}}
+    <!-- WAVE 2.5: Expert Panel -->
+    <details class="group bg-zinc-900/40 border border-indigo-500/20 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:border-indigo-500/30" open id="wave25-details">
+        <summary class="px-6 py-4 text-indigo-400 font-semibold flex items-center cursor-pointer hover:text-indigo-300 transition-colors list-none outline-none">
+            <svg class="w-4 h-4 mr-3 text-indigo-500 group-open:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            <span class="text-xs uppercase tracking-widest">Expert Panel</span>
+            <span class="ml-3 text-[10px] text-indigo-500/60 font-normal tracking-wide hidden sm:inline">AI-recruited domain specialists</span>
+        </summary>
+
+        <!-- Recruiter -->
+        <div class="mx-6 mb-4 bg-zinc-950/60 rounded-xl p-5 border border-zinc-800/50 relative overflow-hidden hover:border-indigo-500/30 transition-colors">
+            <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-indigo-500/60 to-indigo-400/10"></div>
+            <div class="flex items-center mb-4 pb-3 border-b border-zinc-800/50">
+                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center mr-3 flex-shrink-0">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-zinc-200 text-sm">Expert Sourcing Director</h3>
+                    <p class="text-zinc-600 text-[10px] uppercase tracking-widest">Recruiting Specialists</p>
+                </div>
+                <div class="ml-auto w-2 h-2 rounded-full bg-indigo-500 {{.PulseClass}}"></div>
+            </div>
+            <div class="text-zinc-400 font-sans prose prose-invert prose-zinc prose-sm overflow-y-auto max-h-64 pr-2" id="recruiter-stream">
+                <span class="placeholder-text text-zinc-600 italic text-sm">Identifying domain experts for your specific situation…</span>
+            </div>
+        </div>
+
+        <!-- Dynamic Agents Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-fr px-6 pb-6" id="dynamic-grid">
+        </div>
+    </details>
+    {{end}}
+
+    <!-- WAVE 3: Final Verdict -->
+    <div class="flex flex-col mt-2" id="wave3-container">
+        <div class="bg-zinc-900/60 rounded-2xl p-8 md:p-10 relative overflow-hidden border border-zinc-800/60 shadow-2xl shadow-black/30 transition-all">
+            <!-- Accent glow -->
+            <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500/5 via-purple-500/5 to-indigo-500/5 rounded-2xl blur-xl pointer-events-none"></div>
+
+            <div class="relative flex items-center justify-between mb-8 pb-5 border-b border-zinc-800/60">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center mr-4 border border-zinc-700/50">
+                        <svg class="w-5 h-5 text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-zinc-100 text-2xl tracking-tight">The Verdict</h3>
+                        <p class="text-zinc-600 text-[10px] uppercase tracking-widest mt-0.5">Final executive decision</p>
+                    </div>
+                </div>
+                <div class="w-3 h-3 rounded-full bg-zinc-400 {{.PulseClass}} shadow-sm shadow-white/20"></div>
+            </div>
+
+            <div class="relative pl-1 text-zinc-300 font-sans prose prose-invert prose-zinc prose-lg max-w-none leading-relaxed overflow-y-auto max-h-[40rem] pr-4" id="decider-stream">
+                <span class="text-zinc-600 text-base placeholder-text italic">Waiting for all perspectives before rendering a decision…</span>
+            </div>
+        </div>
+    </div>
+</div>

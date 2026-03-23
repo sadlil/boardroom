@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Boardroom — AI-Powered Decision Intelligence</title>
+  <meta name="description" content="Present your dilemma. Your AI board of directors debates it from every angle. Get a definitive, actionable decision.">
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .animate-fade-in {
+      animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in-slow {
+      animation: fadeIn 1.2s ease-out forwards;
+      animation-delay: 0.2s;
+      opacity: 0;
+    }
+
+    .streaming-cursor-target::after {
+      content: "▋";
+      animation: blink 1s step-end infinite;
+      color: #71717a;
+      margin-left: 2px;
+      vertical-align: baseline;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Prose spacing */
+    .prose p { margin-top: 0.5em; margin-bottom: 0.5em; }
+    .prose p:last-child { margin-bottom: 0; }
+
+    /* Modern scrollbars */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+    /* Hero gradient */
+    .hero-glow {
+      background: radial-gradient(ellipse 600px 200px at 50% 0%, rgba(99,102,241,0.08) 0%, transparent 70%);
+    }
+
+    /* Glassmorphism input */
+    .glass-input {
+      background: rgba(24, 24, 27, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    /* Subtle shimmer for standby */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .shimmer-text {
+      background: linear-gradient(90deg, #52525b 25%, #71717a 50%, #52525b 75%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(0.995); }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 4s ease-in-out infinite;
+    }
+  </style>
+  <!-- HTMX Core -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/sse.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body class="bg-zinc-950 text-zinc-400 min-h-screen font-sans antialiased selection:bg-indigo-500/20 selection:text-indigo-200">
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col space-y-3 pointer-events-none"></div>
+
+  <!-- Hero Glow -->
+  <div class="hero-glow fixed inset-x-0 top-0 h-96 pointer-events-none"></div>
+
+  <div class="container mx-auto max-w-6xl px-4 py-12 relative z-10">
+
+    <!-- Header -->
+    <header class="mb-16 flex flex-col items-center relative">
+      <!-- Config Badge -->
+      <div class="absolute top-0 right-0 mt-1" hx-get="/api/config" hx-trigger="load">
+        <span class="px-3 py-1.5 bg-zinc-900/80 border border-zinc-800 rounded-full text-xs font-mono text-zinc-600 tracking-widest shadow-inner animate-pulse">Detecting...</span>
+      </div>
+
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
+          <svg class="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+          </svg>
+        </div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-zinc-100">Boardroom</h1>
+      </div>
+      <p class="text-zinc-400 text-center max-w-lg leading-relaxed">
+        Present your dilemma. Your AI board of directors debates it from every angle.
+        <span class="text-zinc-300 font-medium">Get a definitive decision.</span>
+      </p>
+    </header>
+
+    <!-- Dynamic Panels Container -->
+    <div id="board-panels" class="transition-all duration-700 ease-in-out relative">
+
+      <!-- Main Application Container -->
+      <div id="app-container" hx-get="/api/init" hx-trigger="load" hx-swap="innerHTML">
+        <div class="flex justify-center mt-20">
+          <div class="animate-pulse flex items-center space-x-3 text-zinc-500">
+            <svg class="w-5 h-5 animate-spin text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span class="text-sm font-medium tracking-wide">Initializing Command Center...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-24 pb-8 text-center">
+      <p class="text-zinc-700 text-xs font-mono tracking-widest uppercase">Boardroom · AI Decision Intelligence</p>
+    </footer>
+
+  </div>
+
+  <script>
+    const agentMemory = {};
+
+    // Reset memory on fresh debate
+    document.body.addEventListener('htmx:beforeSwap', function (e) {
+      if (e.detail.target.id === 'board-panels') {
+        for (let key in agentMemory) delete agentMemory[key];
+      }
+    });
+
+    // Intercept native EventSource events dispatched as boardroom:sse
+    document.body.addEventListener('boardroom:sse', function (e) {
+      let agentID = e.detail.type;
+      if (!agentID || agentID === "message") return;
+
+      if (agentID === "toast") {
+        try {
+          let chunk = JSON.parse(e.detail.data);
+          let tContainer = document.getElementById('toast-container');
+          if (tContainer) {
+            tContainer.insertAdjacentHTML('beforeend', chunk);
+          }
+        } catch (err) { }
+        return;
+      }
+
+      if (agentID === "dynamic_panel") {
+        try {
+          let chunk = JSON.parse(e.detail.data);
+          let dynGrid = document.getElementById('dynamic-grid');
+          if (dynGrid) {
+            dynGrid.insertAdjacentHTML('beforeend', chunk);
+            dynGrid.querySelectorAll('[id$="-stream"]').forEach(function(el) {
+              let name = el.id.replace('-stream', '');
+              if (window.__registerDynAgent) {
+                window.__registerDynAgent(name);
+              }
+            });
+          } else {
+            console.error("Critical DOM Error: 'dynamic-grid' was not found on screen!");
+          }
+        } catch (err) {
+          console.error("DOM Injection Failed: ", err);
+        }
+        return;
+      }
+
+      let container = document.getElementById(agentID + '-stream');
+      if (!container) return;
+
+      if (typeof agentMemory[agentID] === 'undefined') { agentMemory[agentID] = ""; }
+
+      try {
+        let chunk = JSON.parse(e.detail.data);
+        agentMemory[agentID] += chunk;
+
+        let placeholder = container.querySelector('.placeholder-text');
+        if (placeholder) { placeholder.remove(); }
+
+        container.innerHTML = marked.parse(agentMemory[agentID]);
+
+        container.querySelectorAll('.streaming-cursor-target').forEach(el => el.classList.remove('streaming-cursor-target'));
+        let lastChild = container.lastElementChild;
+        if (lastChild) {
+          lastChild.classList.add('streaming-cursor-target');
+        }
+        clearTimeout(container.cursorTimeout);
+
+        let parentNode = container.parentElement;
+        let pulse = parentNode ? parentNode.querySelector('.streaming-pulse') : null;
+
+        container.cursorTimeout = setTimeout(() => {
+          container.querySelectorAll('.streaming-cursor-target').forEach(el => el.classList.remove('streaming-cursor-target'));
+          if (pulse) {
+            pulse.classList.remove('animate-pulse');
+            pulse.classList.add('opacity-30');
+          }
+        }, 1500);
+
+        // Wave folding latches
+        if (agentID === 'optimist' || agentID === 'pessimist' || agentID === 'analyst' || agentID === 'recruiter') {
+          if (!window.hasFoldedWave1) {
+            let wave1 = document.getElementById('wave1-details');
+            if (wave1) wave1.removeAttribute('open');
+            window.hasFoldedWave1 = true;
+          }
+        }
+
+        if (agentID === 'decider') {
+          if (!window.hasFoldedWave2) {
+            let wave2 = document.getElementById('wave2-details');
+            if (wave2) wave2.removeAttribute('open');
+            window.hasFoldedWave2 = true;
+          }
+          if (!window.hasFoldedWave25) {
+            let wave25 = document.getElementById('wave25-details');
+            if (wave25) wave25.removeAttribute('open');
+            window.hasFoldedWave25 = true;
+          }
+
+          let wave3C = document.getElementById('wave3-container');
+          if (wave3C) wave3C.classList.remove('opacity-0', 'translate-y-4');
+        }
+
+        container.scrollTop = container.scrollHeight;
+      } catch (err) {
+        console.error("Failed to parse stream chunk", err);
+      }
+    });
+
+    // Loading state on submit
+    document.body.addEventListener('htmx:beforeRequest', function (e) {
+      let btn = e.detail.elt.querySelector('button[type="submit"]');
+      if (btn) {
+        btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Assembling Board...`;
+        btn.classList.add('opacity-70', 'cursor-not-allowed');
+      }
+    });
+
+    // URL-based Session Reloads
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionID = urlParams.get('session');
+      if (sessionID) {
+        htmx.ajax('GET', '/api/session?id=' + sessionID, { target: '#board-panels' });
+      }
+    });
+  </script>
+</body>
+
+</html>

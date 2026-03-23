@@ -1,0 +1,8 @@
+<div class="bg-rose-900/40 border border-rose-500/50 text-rose-200 px-5 py-4 rounded-xl shadow-2xl flex items-center transform transition-all pointer-events-auto" id="toast-{{.ToastID}}">
+    <svg class="w-5 h-5 mr-3 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <div class="flex flex-col">
+        <span class="font-semibold tracking-wide">Critical Failure on {{.AgentName}}.</span>
+        <span class="text-sm text-rose-500/80">Could not complete request after {{.MaxRetries}} attempts.</span>
+    </div>
+</div>
+<script>setTimeout(() => { let el = document.getElementById('toast-{{.ToastID}}'); if(el) { el.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => el.remove(), 300); } }, 10000);</script>

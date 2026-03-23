@@ -1,0 +1,31 @@
+{{- /*gotype: github.com/sadlil/boardroom/internal/server.SessionRestoreData*/ -}}
+<script>
+(function() {
+    let mem = {{.AgentOutputsJSON}};
+    // First, re-inject any dynamic panel HTML so their containers exist
+    if (mem['dynamic_panel']) {
+        let dynGrid = document.getElementById('dynamic-grid');
+        if (dynGrid) {
+            dynGrid.innerHTML = mem['dynamic_panel'];
+        }
+    }
+    // Now render all agent outputs into their containers
+    for (let a in mem) {
+        if (a === 'dynamic_panel' || a === 'toast' || a === 'generator') continue;
+        agentMemory[a] = mem[a];
+        let el = document.getElementById(a + '-stream');
+        if (el) {
+            let p = el.querySelector('.placeholder-text');
+            if (p) p.remove();
+            el.innerHTML = marked.parse(mem[a]);
+        }
+    }
+    // Collapse waves visually assuming it's fully generated
+    let wd1 = document.getElementById('wave1-details');
+    if (wd1) wd1.removeAttribute('open');
+    let wd2 = document.getElementById('wave2-details');
+    if (wd2) wd2.removeAttribute('open');
+    let wd25 = document.getElementById('wave25-details');
+    if (wd25) wd25.removeAttribute('open');
+})();
+</script>

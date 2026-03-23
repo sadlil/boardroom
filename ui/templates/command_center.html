@@ -1,0 +1,71 @@
+<!-- Input Area -->
+<form class="max-w-3xl mx-auto mb-16 relative z-10 animate-fade-in" id="debate-form" hx-post="/api/debate" hx-target="#board-panels" hx-swap="innerHTML">
+  <div class="relative group">
+    <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-indigo-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-all duration-700"></div>
+    <div class="glass-input relative flex flex-col rounded-2xl overflow-hidden border border-zinc-800/80 focus-within:border-indigo-500/40 shadow-2xl shadow-black/40 transition-all duration-300">
+      <textarea name="prompt" placeholder="Describe the decision you're facing…" rows="3"
+        onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); htmx.trigger(this.form, 'submit'); }"
+        class="w-full bg-transparent px-6 py-5 text-zinc-200 focus:outline-none placeholder-zinc-600 text-lg resize-none leading-relaxed"
+        required autofocus></textarea>
+
+      <div class="flex flex-col px-5 py-4 border-t border-zinc-800/60 space-y-3">
+        <!-- Hints -->
+        <div class="flex w-full text-left">
+          <span class="text-[11px] text-zinc-600 font-mono hidden sm:flex items-center space-x-1">
+            <span>Press</span>
+            <kbd class="px-1.5 py-0.5 bg-zinc-800/80 rounded mx-0.5 border border-zinc-700/50 text-zinc-400 text-[10px]">Enter</kbd>
+            <span>to submit ·</span>
+            <kbd class="px-1.5 py-0.5 bg-zinc-800/80 rounded mx-0.5 border border-zinc-700/50 text-zinc-400 text-[10px]">Shift+Enter</kbd>
+            <span>for new line</span>
+          </span>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between w-full">
+          <label class="flex items-center space-x-2.5 text-sm text-zinc-500 cursor-pointer hover:text-zinc-300 transition-colors group/check">
+            <input type="checkbox" name="dynamic_agents" value="true"
+              class="w-4 h-4 rounded border-zinc-700 bg-zinc-900 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-950 border appearance-none checked:bg-indigo-500 checked:border-indigo-500 flex-shrink-0 transition-colors">
+            <span class="font-medium whitespace-nowrap">Summon Dynamic Experts</span>
+            <span class="text-[10px] text-zinc-600 font-mono hidden sm:inline">(AI recruits domain specialists)</span>
+          </label>
+          <button type="submit"
+            class="bg-indigo-500 hover:bg-indigo-400 text-white outline-none px-6 py-2.5 rounded-xl font-semibold tracking-wide transition-all shadow-lg shadow-indigo-500/20 flex items-center space-x-2 transform hover:scale-[1.02] active:scale-95">
+            <span>Convene the Board</span>
+            <svg class="w-4 h-4 ml-1 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+<!-- Standby State -->
+<div class="max-w-2xl mx-auto mt-8 animate-fade-in-slow">
+  <div class="rounded-2xl p-10 text-center flex flex-col items-center justify-center border border-zinc-800/50 bg-zinc-900/30">
+    <!-- Board Member Preview Icons -->
+    <div class="flex items-center -space-x-2 mb-6">
+      <div class="w-10 h-10 rounded-full bg-emerald-500/10 border-2 border-zinc-900 flex items-center justify-center" title="Optimist">
+        <span class="text-emerald-400 text-sm font-bold">O</span>
+      </div>
+      <div class="w-10 h-10 rounded-full bg-rose-500/10 border-2 border-zinc-900 flex items-center justify-center" title="Pessimist">
+        <span class="text-rose-400 text-sm font-bold">P</span>
+      </div>
+      <div class="w-10 h-10 rounded-full bg-amber-500/10 border-2 border-zinc-900 flex items-center justify-center" title="Analyst">
+        <span class="text-amber-400 text-sm font-bold">A</span>
+      </div>
+      <div class="w-10 h-10 rounded-full bg-zinc-800 border-2 border-zinc-900 flex items-center justify-center" title="Decider">
+        <span class="text-zinc-300 text-sm font-bold">D</span>
+      </div>
+    </div>
+
+    <h3 class="text-base font-semibold text-zinc-300 mb-2">Your board is ready</h3>
+    <p class="text-zinc-500 text-sm max-w-sm leading-relaxed">
+      Describe a decision, dilemma, or strategy above. Your AI advisors will analyze it from
+      <span class="text-zinc-400">optimistic</span>,
+      <span class="text-zinc-400">pessimistic</span>, and
+      <span class="text-zinc-400">financial</span> perspectives — then deliver a final verdict.
+    </p>
+  </div>
+</div>
