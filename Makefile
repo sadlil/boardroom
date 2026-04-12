@@ -16,7 +16,12 @@ dep:
 	go mod tidy -e
 
 test:
-	go test -v ./...
+	go test ./...
+
+test-v:
+	go test -v -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated at coverage.html"
 
 clean:
 	go clean -i -r -x

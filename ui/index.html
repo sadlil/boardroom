@@ -117,9 +117,15 @@
 
     <!-- Header -->
     <header class="mb-16 flex flex-col items-center relative">
-      <!-- Config Badge -->
-      <div class="absolute top-0 right-0 mt-1" hx-get="/api/config" hx-trigger="load">
-        <span class="px-3 py-1.5 bg-zinc-900/80 border border-zinc-800 rounded-full text-xs font-mono text-zinc-600 tracking-widest shadow-inner animate-pulse">Detecting...</span>
+      <!-- Config Badge & Actions -->
+      <div class="absolute top-0 right-0 mt-1 flex space-x-3 items-center">
+        <button hx-get="/api/memories" hx-target="#modal-container" hx-swap="innerHTML" class="px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 transition border border-indigo-500/30 rounded-full text-xs font-mono text-indigo-300 tracking-widest shadow-[0_0_15px_rgba(99,102,241,0.2)] hover:shadow-[0_0_20px_rgba(99,102,241,0.4)] relative group flex items-center justify-center">
+          <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2 animate-pulse"></span>
+          Memories
+        </button>
+        <div hx-get="/api/config" hx-trigger="load">
+          <span class="px-3 py-1.5 bg-zinc-900/80 border border-zinc-800 rounded-full text-xs font-mono text-zinc-600 tracking-widest shadow-inner animate-pulse">Detecting...</span>
+        </div>
       </div>
 
       <!-- Logo & Title -->
@@ -205,6 +211,30 @@
         return;
       }
 
+      if (agentID === "error") {
+        try {
+          let errorHTML = JSON.parse(e.detail.data);
+          // Inject into the verdict panel to make it unmissable
+          let verdictStream = document.getElementById('decider-stream');
+          if (verdictStream) {
+            verdictStream.innerHTML = errorHTML;
+          }
+          // Also show in the toast container
+          let tContainer = document.getElementById('toast-container');
+          if (tContainer) {
+            tContainer.insertAdjacentHTML('beforeend', errorHTML);
+          }
+          // Stop all pulse animations to signal completion
+          document.querySelectorAll('.streaming-pulse, .animate-pulse').forEach(function(el) {
+            el.classList.remove('animate-pulse', 'streaming-pulse');
+            el.classList.add('opacity-30');
+          });
+        } catch (err) {
+          console.error("Failed to render error event", err);
+        }
+        return;
+      }
+
       let container = document.getElementById(agentID + '-stream');
       if (!container) return;
 
@@ -286,6 +316,9 @@
       }
     });
   </script>
+
+  <!-- Modal Container -->
+  <div id="modal-container"></div>
 </body>
 
 </html>

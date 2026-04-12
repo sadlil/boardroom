@@ -3,13 +3,14 @@ package agents
 import (
 	"context"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 	"sync"
 
+	"github.com/golang/glog"
 	"github.com/sadlil/boardroom/internal/llm"
 	"github.com/sadlil/boardroom/ui"
+	"github.com/tmc/langchaingo/tools"
 )
 
 // --- Wave 2.5: Dynamic Expert Sourcing ---
@@ -71,11 +72,11 @@ func (o *Orchestrator) runDynamicSourcing(
 
 	var res DynamicResponse
 	if err := ExtractJSON(dynJSON, &res); err != nil {
-		log.Printf("Failed to parse dynamic expert JSON: %v", err)
+		glog.Errorf("Failed to parse dynamic expert JSON: %v\n", err)
 		return
 	}
 
-	log.Printf("Successfully extracted %d dynamic experts from the Generator model.", len(res.Experts))
+	glog.Infof("Successfully extracted %d dynamic experts from the Generator model.\n", len(res.Experts))
 	callback("recruiter", fmt.Sprintf("\n\n**Decision**: Sourced %d specialized experts for immediate evaluation:\n", len(res.Experts)))
 
 	var wgDyn sync.WaitGroup
@@ -96,7 +97,7 @@ func (o *Orchestrator) runDynamicSourcing(
 			CleanID string
 		}{Name: exp.Name, CleanID: cleanID})
 		if err != nil {
-			log.Printf("Failed to render dynamic panel template: %v", err)
+			glog.Errorf("Failed to render dynamic panel template: %v\n", err)
 			continue
 		}
 
@@ -110,9 +111,18 @@ func (o *Orchestrator) runDynamicSourcing(
 			defer wgDyn.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			log.Printf("Starting dynamic debate for agent: %s (%s)", name, id)
-			expertMsg := []llm.Message{{Role: "user", Content: "Context Payload:\n" + contextJSON + "\n\nUser Prompt: " + prompt}}
-			out, _ := o.executeWithRetry(ctx, id, name, sysPrompt, expertMsg, callback)
+			glog.Infof("Starting dynamic debate for agent: %s (%s)\n", name, id)
+			// Prepare tools. Dynamic Experts get access to internet search.
+			expertTools := []tools.Tool{&SearchTool{}}
+
+			// Build a temporary agent payload
+			tempAgent := Agent{
+				ID:           id,
+				Name:         name,
+				SystemPrompt: sysPrompt,
+			}
+
+			out, _ := o.ReActExecutor(ctx, tempAgent, "Context Payload:\n"+contextJSON+"\n\nUser Prompt: "+prompt, expertTools, callback)
 			if out != "" {
 				mu.Lock()
 				*wave2Outputs = append(*wave2Outputs, FormatOutput(name, out))

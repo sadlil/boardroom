@@ -2,7 +2,7 @@ package server
 
 import (
 	"fmt"
-	"log"
+	"github.com/golang/glog"
 	"os"
 	"strconv"
 	"time"
@@ -35,7 +35,7 @@ func NewSessionStore() *SessionStore {
 	}
 
 	cache, _ := lru.New[string, *SessionData](maxSize)
-	log.Printf("Session store initialized (LRU max size: %d)", maxSize)
+	glog.Infof("Session store initialized (LRU max size: %d)", maxSize)
 
 	return &SessionStore{cache: cache}
 }
@@ -81,4 +81,13 @@ func (s *SessionStore) MarkCompleted(id string) {
 		return
 	}
 	val.Status = "completed"
+}
+
+// SetStatus sets the session status to an arbitrary value (e.g., "error").
+func (s *SessionStore) SetStatus(id, status string) {
+	val, ok := s.cache.Get(id)
+	if !ok {
+		return
+	}
+	val.Status = status
 }

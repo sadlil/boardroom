@@ -2,7 +2,7 @@ package database
 
 import (
 	"database/sql"
-	"log"
+	"github.com/golang/glog"
 	"os"
 	"path/filepath"
 
@@ -53,7 +53,7 @@ func NewSQLiteDB(dbPath string) (*SQLiteDB, error) {
 		return nil, err
 	}
 
-	log.Println("SQLite database initialized at", dbPath)
+	glog.Infoln("SQLite database initialized at", dbPath)
 	return &SQLiteDB{db: db}, nil
 }
 
@@ -85,4 +85,3 @@ func (s *SQLiteDB) SaveProfile(profileData string) error {
     `, profileData)
 	return err
 }
-

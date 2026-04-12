@@ -17,15 +17,20 @@ RUN GOOS=linux GOARCH=amd64 go build -o /boardroom ./cmd/boardroom
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates tzdata sqlite
 
-WORKDIR /root/
+# Create non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+WORKDIR /app
 COPY --from=builder /boardroom .
+
+# Ensure empty data volume mountpoint exists and set permissions
+RUN mkdir -p /app/data && chown -R appuser:appgroup /app
+
+USER appuser
 
 # Default configuration env bindings
 ENV PORT=8080
-ENV STORAGE_ROOT=/root/data
-
-# Ensure empty data volume mountpoint exists
-RUN mkdir -p /root/data
+ENV STORAGE_ROOT=/app/data
 
 EXPOSE 8080
 CMD ["./boardroom"]

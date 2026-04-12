@@ -4,10 +4,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"html/template"
-	"log"
 	"net/http"
 	"os"
+	"strings"
 
+	"github.com/golang/glog"
 	"github.com/sadlil/boardroom/internal/agents"
 	"github.com/sadlil/boardroom/ui"
 )
@@ -17,7 +18,7 @@ func (h *Handler) handleInit(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	profile, err := h.sqlite.GetProfile()
 	if err != nil {
-		log.Printf("Error fetching profile: %v", err)
+		glog.Errorf("Error fetching profile: %v", err)
 	}
 
 	if profile == "" {
@@ -47,24 +48,23 @@ func (h *Handler) handleOnboard(w http.ResponseWriter, r *http.Request) {
 
 	profileJSON, err := json.Marshal(profile)
 	if err != nil {
-		log.Printf("Failed to marshal profile: %v", err)
+		glog.Errorf("Failed to marshal profile: %v", err)
 		http.Error(w, "Failed to process profile", http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.sqlite.SaveProfile(string(profileJSON)); err != nil {
-		log.Printf("Failed to save profile: %v", err)
+		glog.Errorf("Failed to save profile: %v", err)
 		http.Error(w, "Failed to save profile", http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("User profile saved: role=%s, industry=%s, experience=%s, risk=%s",
+	glog.Infof("User profile saved: role=%s, industry=%s, experience=%s, risk=%s",
 		profile["role"], profile["industry"], profile["experience_level"], profile["risk_tolerance"])
 
 	w.Header().Set("Content-Type", "text/html")
 	ui.Render(w, "command_center.html", nil)
 }
-
 
 // handleConfig returns the current LLM provider/model badge.
 func (h *Handler) handleConfig(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +112,7 @@ func (h *Handler) handleStartDebate(w http.ResponseWriter, r *http.Request) {
 	action := r.FormValue("action")
 	useDynamicAgents := r.FormValue("dynamic_agents") == "true"
 
-	log.Printf("Dynamic agents enabled: %v", useDynamicAgents)
+	glog.Infof("Dynamic agents enabled: %v", useDynamicAgents)
 
 	if prompt == "" && action != "skip" {
 		http.Error(w, "Prompt is required", http.StatusBadRequest)
@@ -167,11 +167,75 @@ func buildFullPrompt(prompt, previousContext, action string) string {
 
 // checkClarification runs Wave 0 and returns the clarification result.
 func (h *Handler) checkClarification(r *http.Request, prompt string) *agents.ClarificationResult {
-	log.Printf("Evaluating prompt for clarification...")
+	glog.Info("Evaluating prompt for clarification...")
 	result, err := h.orchestrator.CheckClarification(r.Context(), prompt)
 	if err != nil {
-		log.Printf("Clarification failed: %v", err)
+		glog.Errorf("Clarification failed: %v", err)
 		return &agents.ClarificationResult{NeedsContext: false}
 	}
 	return result
+}
+
+// handleGetMemories fetches all vector memories and the user profile for display.
+func (h *Handler) handleGetMemories(w http.ResponseWriter, r *http.Request) {
+	profile, _ := h.sqlite.GetProfile()
+
+	docs, err := h.memory.GetAllDocuments(r.Context())
+	if err != nil {
+		glog.Errorf("Failed to retrieve vector memories: %v", err)
+		http.Error(w, "Failed to retrieve memories", http.StatusInternalServerError)
+		return
+	}
+
+	snippets := make([]MemorySnippet, 0, len(docs))
+	for _, doc := range docs {
+		snippets = append(snippets, MemorySnippet{
+			ID:      doc.ID,
+			Content: doc.Content,
+		})
+	}
+
+	var coreMemory map[string]string
+	var learnedFacts []map[string]string
+
+	if profile != "" {
+		// Split by the well-known marker
+		parts := strings.Split(profile, "--- Learned Facts (auto-updated) ---")
+		
+		// 1. Process the Core Memory (always the first block)
+		if len(parts) > 0 {
+			rawCore := strings.TrimSpace(parts[0])
+			if rawCore != "" {
+				if err := json.Unmarshal([]byte(rawCore), &coreMemory); err != nil {
+					glog.Errorf("Failed to parse core memory JSON: %v | Raw: %s", err, rawCore)
+					coreMemory = map[string]string{"Raw Profile": rawCore}
+				}
+			}
+		}
+		
+		// 2. Process any subsequent Learned Facts blocks
+		if len(parts) > 1 {
+			for _, p := range parts[1:] {
+				rawFact := strings.TrimSpace(p)
+				if rawFact == "" {
+					continue
+				}
+				var factMap map[string]string
+				if err := json.Unmarshal([]byte(rawFact), &factMap); err != nil {
+					glog.Errorf("Failed to parse learned fact JSON: %v", err)
+					continue
+				}
+				learnedFacts = append(learnedFacts, factMap)
+			}
+		}
+	}
+
+	data := MemoriesData{
+		CoreMemory:   coreMemory,
+		LearnedFacts: learnedFacts,
+		Snippets:     snippets,
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	ui.Render(w, "memories_modal.html", data)
 }

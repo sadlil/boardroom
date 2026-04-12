@@ -1,0 +1,12 @@
+<div class="bg-rose-950/80 border-2 border-rose-500/60 text-rose-100 px-6 py-5 rounded-xl shadow-2xl shadow-rose-500/10 flex items-start space-x-4 pointer-events-auto animate-fade-in max-w-lg" id="fatal-error-banner">
+  <div class="flex-shrink-0 mt-0.5">
+    <div class="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center border border-rose-500/30">
+      <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>
+    </div>
+  </div>
+  <div class="flex flex-col space-y-1">
+    <span class="font-bold text-rose-200 tracking-wide text-sm">Pipeline Failure</span>
+    <span class="text-sm text-rose-300/90 leading-relaxed">{{.Message}}</span>
+    <span class="text-xs text-rose-500/70 font-mono mt-2">The debate could not be completed. Please check your LLM connection and try again.</span>
+  </div>
+</div>

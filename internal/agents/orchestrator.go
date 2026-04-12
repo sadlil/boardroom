@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/golang/glog"
 	"github.com/sadlil/boardroom/internal/database"
 	"github.com/sadlil/boardroom/internal/llm"
 )
@@ -28,27 +28,35 @@ func NewOrchestrator(client llm.Client, sqlite *database.SQLiteDB, memory *datab
 }
 
 // RunDebate manages the sequential 3-Wave debate.
-func (o *Orchestrator) RunDebate(ctx context.Context, prompt string, useDynamic bool, callback StreamCallback) {
+// Returns an error if a critical failure prevents the debate from completing.
+func (o *Orchestrator) RunDebate(ctx context.Context, prompt string, useDynamic bool, callback StreamCallback) error {
 	// Build the concurrency semaphore
 	sem := o.buildSemaphore()
 
 	// Wave 1: Context Agents
 	contextJSON := o.runWave1(ctx, prompt, callback)
 	if ctx.Err() != nil {
-		return
+		return fmt.Errorf("debate cancelled during context analysis: %w", ctx.Err())
 	}
 
 	// Wave 2 + Wave 2.5 (parallel)
-	wave2Outputs := o.runWave2(ctx, prompt, contextJSON, useDynamic, callback, sem)
+	wave2Outputs, wave2Err := o.runWave2(ctx, prompt, contextJSON, useDynamic, callback, sem)
 	if ctx.Err() != nil {
-		return
+		return fmt.Errorf("debate cancelled during board debate: %w", ctx.Err())
+	}
+	if wave2Err != nil && len(wave2Outputs) == 0 {
+		return fmt.Errorf("all board debaters failed: %w", wave2Err)
 	}
 
 	// Wave 3: The Decider
-	wave3Output := o.runWave3(ctx, prompt, contextJSON, wave2Outputs, callback)
+	wave3Output, wave3Err := o.runWave3(ctx, prompt, contextJSON, wave2Outputs, callback)
+	if wave3Err != nil {
+		return fmt.Errorf("the Decider agent failed to render a verdict: %w", wave3Err)
+	}
 
 	// Background: The Scribe
 	go o.runScribe(context.WithoutCancel(ctx), prompt, contextJSON, wave2Outputs, wave3Output)
+	return nil
 }
 
 // buildSemaphore creates a channel-based semaphore from MAX_CONCURRENT_AGENTS.
@@ -65,20 +73,20 @@ func (o *Orchestrator) buildSemaphore() chan struct{} {
 // runWave1 executes the context agents in parallel and returns the marshaled ContextPayload.
 func (o *Orchestrator) runWave1(ctx context.Context, prompt string, callback StreamCallback) string {
 	// A) Fetch Static Profile
-	log.Println("[Context] Fetching user profile from SQLite...")
+	glog.Info("[Context] Fetching user profile from SQLite...")
 	staticProfile, err := o.sqlite.GetProfile()
 	if err != nil {
-		log.Printf("[Context] ✗ Failed to fetch static profile: %v", err)
+		glog.Errorf("[Context] ✗ Failed to fetch static profile: %v\n", err)
 	}
 	if staticProfile == "" {
 		staticProfile = "No user profile available. The user has not completed onboarding."
-		log.Println("[Context] No profile found — using default placeholder.")
+		glog.Info("[Context] No profile found — using default placeholder.")
 	} else {
-		log.Printf("[Context] ✓ Profile loaded (%d chars)", len(staticProfile))
+		glog.Infof("[Context] ✓ Profile loaded (%d chars)\n", len(staticProfile))
 	}
 
 	// B) Fetch Semantic History (top 3 most relevant past decisions)
-	log.Println("[Context] Querying vector DB for relevant past decisions...")
+	glog.Info("[Context] Querying vector DB for relevant past decisions...")
 	historyStr := "No prior decision history available."
 	if docs, err := o.memory.Search(ctx, prompt, 3); err == nil && len(docs) > 0 {
 		var b strings.Builder
@@ -86,11 +94,11 @@ func (o *Orchestrator) runWave1(ctx context.Context, prompt string, callback Str
 			b.WriteString(fmt.Sprintf("\n[Decision %d] %s", i+1, v.Content))
 		}
 		historyStr = b.String()
-		log.Printf("[Context] ✓ Found %d relevant past decisions", len(docs))
+		glog.Infof("[Context] ✓ Found %d relevant past decisions\n", len(docs))
 	} else if err != nil {
-		log.Printf("[Context] ✗ Vector search failed: %v", err)
+		glog.Errorf("[Context] ✗ Vector search failed: %v\n", err)
 	} else {
-		log.Println("[Context] No relevant past decisions found.")
+		glog.Info("[Context] No relevant past decisions found.")
 	}
 
 	// C) Inject structured context into the Chief of Staff's system prompt
@@ -113,7 +121,7 @@ Reference specific profile details and past decisions when relevant.
 
 	augmentedChiefOfStaff := ChiefOfStaff
 	augmentedChiefOfStaff.SystemPrompt = ChiefOfStaff.SystemPrompt + contextBlock
-	log.Printf("[Context] Chief of Staff augmented with %d chars of context", len(contextBlock))
+	glog.Infof("[Context] Chief of Staff augmented with %d chars of context\n", len(contextBlock))
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -154,14 +162,16 @@ Reference specific profile details and past decisions when relevant.
 }
 
 // runWave2 executes debaters and optionally dynamic experts in parallel.
-func (o *Orchestrator) runWave2(ctx context.Context, prompt, contextJSON string, useDynamic bool, callback StreamCallback, sem chan struct{}) []string {
+// Returns the collected outputs and any last error encountered.
+func (o *Orchestrator) runWave2(ctx context.Context, prompt, contextJSON string, useDynamic bool, callback StreamCallback, sem chan struct{}) ([]string, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var wave2Outputs []string
+	var lastErr error
 
 	// Launch fixed debaters
 	for _, a := range DebaterAgents() {
-		log.Printf("Starting debate for agent: %s", a.Name)
+		glog.Infof("Starting debate for agent: %s\n", a.Name)
 		wg.Add(1)
 		go func(agent Agent) {
 			defer wg.Done()
@@ -170,11 +180,14 @@ func (o *Orchestrator) runWave2(ctx context.Context, prompt, contextJSON string,
 			enhancedPrompt := "Context Payload:\n" + contextJSON + "\n\nUser Prompt: " + prompt
 			fullResponse, err := o.executeWithRetry(ctx, agent.ID, agent.Name, agent.SystemPrompt,
 				[]llm.Message{{Role: "user", Content: enhancedPrompt}}, callback)
+			mu.Lock()
 			if err == nil {
-				mu.Lock()
 				wave2Outputs = append(wave2Outputs, FormatOutput(agent.Name, fullResponse))
-				mu.Unlock()
+			} else {
+				lastErr = fmt.Errorf("agent %s failed: %w", agent.Name, err)
+				glog.Errorf("Wave 2 agent %s failed: %v\n", agent.Name, err)
 			}
+			mu.Unlock()
 		}(a)
 	}
 
@@ -188,18 +201,18 @@ func (o *Orchestrator) runWave2(ctx context.Context, prompt, contextJSON string,
 	}
 
 	wg.Wait()
-	return wave2Outputs
+	return wave2Outputs, lastErr
 }
 
 // runWave3 feeds all prior outputs to the Decider for final synthesis.
-func (o *Orchestrator) runWave3(ctx context.Context, prompt, contextJSON string, wave2Outputs []string, callback StreamCallback) string {
+func (o *Orchestrator) runWave3(ctx context.Context, prompt, contextJSON string, wave2Outputs []string, callback StreamCallback) (string, error) {
 	wave3Prompt := "Context Payload:\n" + contextJSON +
 		"\n\nDebaters:\n" + strings.Join(wave2Outputs, "\n\n---\n\n") +
 		"\n\nUser Procedure Request: " + prompt
 
-	output, _ := o.executeWithRetry(ctx, Decider.ID, Decider.Name, Decider.SystemPrompt,
+	output, err := o.executeWithRetry(ctx, Decider.ID, Decider.Name, Decider.SystemPrompt,
 		[]llm.Message{{Role: "user", Content: wave3Prompt}}, callback)
-	return output
+	return output, err
 }
 
 // ParseGuests looks for `/invite @RoleName` in the prompt string.

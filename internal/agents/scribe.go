@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/google/uuid"
 	"github.com/sadlil/boardroom/internal/llm"
 )
@@ -112,8 +112,8 @@ func (f ScribeFacts) FormatForProfile() string {
 // runScribe processes the debate and updates SQLite/VectorDB memories silently in the background.
 func (o *Orchestrator) runScribe(ctx context.Context, prompt, contextJSON string, wave2 []string, deciderOutput string) {
 	startTime := time.Now()
-	log.Println("[Scribe] Starting background memory management")
-	log.Printf("[Scribe] Dilemma length: %d chars | Context: %d chars | Debaters: %d | Verdict: %d chars",
+	glog.Info("[Scribe] Starting background memory management")
+	glog.Infof("[Scribe] Dilemma length: %d chars | Context: %d chars | Debaters: %d | Verdict: %d chars\n",
 		len(prompt), len(contextJSON), len(wave2), len(deciderOutput))
 
 	// Build the full transcript for analysis
@@ -121,17 +121,17 @@ func (o *Orchestrator) runScribe(ctx context.Context, prompt, contextJSON string
 		"=== USER DILEMMA ===\n%s\n\n=== CONTEXT ANALYSIS ===\n%s\n\n=== BOARD DEBATE ===\n%s\n\n=== FINAL VERDICT ===\n%s",
 		prompt, contextJSON, strings.Join(wave2, "\n\n---\n\n"), deciderOutput,
 	)
-	log.Printf("[Scribe] Transcript compiled: %d total chars", len(transcript))
+	glog.Infof("[Scribe] Transcript compiled: %d total chars\n", len(transcript))
 
 	// Execute the Scribe LLM
-	log.Println("[Scribe] Invoking LLM for fact extraction and summary generation...")
+	glog.Info("[Scribe] Invoking LLM for fact extraction and summary generation...")
 	output, err := o.executeWithRetry(ctx, ScribeAgent.ID, ScribeAgent.Name, ScribeAgent.SystemPrompt,
 		[]llm.Message{{Role: "user", Content: transcript}}, func(agentID, chunk string) {})
 	if err != nil {
-		log.Printf("[Scribe] ✗ LLM invocation failed after %.2fs: %v", time.Since(startTime).Seconds(), err)
+		glog.Errorf("[Scribe] ✗ LLM invocation failed after %.2fs: %v\n", time.Since(startTime).Seconds(), err)
 		return
 	}
-	log.Printf("[Scribe] LLM responded: %d chars in %.2fs", len(output), time.Since(startTime).Seconds())
+	glog.Infof("[Scribe] LLM responded: %d chars in %.2fs\n", len(output), time.Since(startTime).Seconds())
 
 	// Clean output (strip markdown code blocks if present)
 	cleaned := strings.TrimSpace(output)
@@ -145,32 +145,32 @@ func (o *Orchestrator) runScribe(ctx context.Context, prompt, contextJSON string
 	// Parse JSON output
 	var result ScribeOutput
 	if err := json.Unmarshal([]byte(cleaned), &result); err != nil {
-		log.Printf("[Scribe] JSON parse failed: %v", err)
-		log.Printf("[Scribe] Raw output (first 500 chars): %.500s", cleaned)
+		glog.Errorf("[Scribe] JSON parse failed: %v\n", err)
+		glog.Errorf("[Scribe] Raw output (first 500 chars): %.500s\n", cleaned)
 		return
 	}
-	log.Println("[Scribe] JSON parsed successfully")
+	glog.Info("[Scribe] JSON parsed successfully")
 
 	// ── 1. Update SQLite Profile ──
 	if result.NewFacts.HasContent() {
-		log.Println("[Scribe] New facts detected:")
+		glog.Info("[Scribe] New facts detected:")
 		if result.NewFacts.Identity != "" {
-			log.Printf("[Scribe]   → Identity: %s", result.NewFacts.Identity)
+			glog.Infof("[Scribe]   → Identity: %s\n", result.NewFacts.Identity)
 		}
 		if result.NewFacts.Financial != "" {
-			log.Printf("[Scribe]   → Financial: %s", result.NewFacts.Financial)
+			glog.Infof("[Scribe]   → Financial: %s\n", result.NewFacts.Financial)
 		}
 		if result.NewFacts.Goals != "" {
-			log.Printf("[Scribe]   → Goals: %s", result.NewFacts.Goals)
+			glog.Infof("[Scribe]   → Goals: %s\n", result.NewFacts.Goals)
 		}
 		if result.NewFacts.Constraints != "" {
-			log.Printf("[Scribe]   → Constraints: %s", result.NewFacts.Constraints)
+			glog.Infof("[Scribe]   → Constraints: %s\n", result.NewFacts.Constraints)
 		}
 		if result.NewFacts.Preferences != "" {
-			log.Printf("[Scribe]   → Preferences: %s", result.NewFacts.Preferences)
+			glog.Infof("[Scribe]   → Preferences: %s\n", result.NewFacts.Preferences)
 		}
 		if result.NewFacts.Domain != "" {
-			log.Printf("[Scribe]   → Domain: %s", result.NewFacts.Domain)
+			glog.Infof("[Scribe]   → Domain: %s\n", result.NewFacts.Domain)
 		}
 
 		currentProfile, _ := o.sqlite.GetProfile()
@@ -184,12 +184,12 @@ func (o *Orchestrator) runScribe(ctx context.Context, prompt, contextJSON string
 		}
 
 		if err := o.sqlite.SaveProfile(newProfile); err != nil {
-			log.Printf("[Scribe] SQLite profile update failed: %v", err)
+			glog.Errorf("[Scribe] SQLite profile update failed: %v\n", err)
 		} else {
-			log.Printf("[Scribe] SQLite profile updated (%d → %d chars)", len(currentProfile), len(newProfile))
+			glog.Infof("[Scribe] SQLite profile updated (%d → %d chars)\n", len(currentProfile), len(newProfile))
 		}
 	} else {
-		log.Println("[Scribe] No new static facts discovered in this debate.")
+		glog.Info("[Scribe] No new static facts discovered in this debate.")
 	}
 
 	// ── 2. Insert into Vector Database ──
@@ -200,17 +200,17 @@ func (o *Orchestrator) runScribe(ctx context.Context, prompt, contextJSON string
 			"dilemma":    prompt,
 			"created_at": time.Now().UTC().Format(time.RFC3339),
 		}
-		log.Printf("[Scribe] Inserting vector document: id=%s, summary_len=%d", docID, len(result.DecisionSummary))
-		log.Printf("[Scribe] Summary preview: %.200s", result.DecisionSummary)
+		glog.Infof("[Scribe] Inserting vector document: id=%s, summary_len=%d\n", docID, len(result.DecisionSummary))
+		glog.Infof("[Scribe] Summary preview: %.200s\n", result.DecisionSummary)
 
 		if err := o.memory.AddDocument(ctx, docID, result.DecisionSummary, metadata); err != nil {
-			log.Printf("[Scribe] Vector DB insert failed: %v", err)
+			glog.Errorf("[Scribe] Vector DB insert failed: %v\n", err)
 		} else {
-			log.Printf("[Scribe] Vector memory updated (doc_id=%s)", docID)
+			glog.Infof("[Scribe] Vector memory updated (doc_id=%s)\n", docID)
 		}
 	} else {
-		log.Println("[Scribe] No decision summary generated — skipping vector insert.")
+		glog.Info("[Scribe] No decision summary generated — skipping vector insert.")
 	}
 
-	log.Printf("[Scribe] Background memory management completed in %.2fs", time.Since(startTime).Seconds())
+	glog.Infof("[Scribe] Background memory management completed in %.2fs\n", time.Since(startTime).Seconds())
 }

@@ -3,9 +3,11 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
+
+	"github.com/golang/glog"
+	"github.com/sadlil/boardroom/ui"
 )
 
 // handleSSEStream establishes an SSE connection and runs the debate pipeline.
@@ -57,10 +59,30 @@ func (h *Handler) handleSSEStream(w http.ResponseWriter, r *http.Request) {
 
 	// Run the orchestrator synchronously to guarantee we don't return from
 	// the HTTP handler before all goroutines inside have fully shut down.
-	h.orchestrator.RunDebate(ctx, session.Prompt, session.UseDynamicAgents, func(agentID, chunk string) {
+	err := h.orchestrator.RunDebate(ctx, session.Prompt, session.UseDynamicAgents, func(agentID, chunk string) {
 		sendEvent(agentID, chunk)
 	})
 
+	if err != nil {
+		glog.Errorf("Debate pipeline failed for session %s: %v\n", sessionID, err)
+		h.sessions.SetStatus(sessionID, "error")
+
+		// Render the fatal error banner and send it via a special "error" SSE event
+		errorHTML, renderErr := ui.RenderToString("toast_fatal.html", struct {
+			Message string
+		}{Message: err.Error()})
+		if renderErr != nil {
+			errorHTML = fmt.Sprintf("<div class='text-rose-400 p-4'>Critical error: %s</div>", err.Error())
+		}
+
+		mu.Lock()
+		encodedError, _ := json.Marshal(errorHTML)
+		fmt.Fprintf(w, "event: error\ndata: %s\n\n", string(encodedError))
+		flusher.Flush()
+		mu.Unlock()
+		return
+	}
+
 	h.sessions.MarkCompleted(sessionID)
-	log.Printf("SSE stream completed for session %s (data preserved in memory)", sessionID)
+	glog.Infof("SSE stream completed for session %s (data preserved in memory)\n", sessionID)
 }

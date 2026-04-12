@@ -1,7 +1,7 @@
 {{- /*gotype: github.com/sadlil/boardroom/internal/server.SSEConnectData*/ -}}
 <script>
 (function() {
-    var knownEvents = ['user_persona','macroeconomist','optimist','pessimist','analyst','recruiter','decider','toast','dynamic_panel'];
+    var knownEvents = ['user_persona','macroeconomist','optimist','pessimist','analyst','recruiter','decider','toast','dynamic_panel','error'];
     var es = new EventSource('/api/stream?id={{.SessionID}}');
     function handler(e) {
         var evt = new CustomEvent('boardroom:sse', { detail: { type: e.type, data: e.data } });

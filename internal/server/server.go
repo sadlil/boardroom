@@ -28,8 +28,12 @@ func NewServer(sqlite *database.SQLiteDB, memory *database.VectorMemory, orchest
 
 	return &Server{
 		httpServer: &http.Server{
-			Addr:    ":8080",
-			Handler: mux,
+			Addr:              ":8080",
+			Handler:           SecurityMiddleware(mux),
+			ReadHeaderTimeout: 5 * time.Second,
+			ReadTimeout:       10 * time.Second,
+			WriteTimeout:      0, // Disabled: SSE streams are long-lived; LLM debates can run for minutes
+			IdleTimeout:       120 * time.Second,
 		},
 	}
 }

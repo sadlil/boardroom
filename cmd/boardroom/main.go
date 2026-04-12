@@ -2,13 +2,13 @@ package main
 
 import (
 	"flag"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
 
+	"github.com/golang/glog"
 	"github.com/joho/godotenv"
 	"github.com/sadlil/boardroom/internal/agents"
 	"github.com/sadlil/boardroom/internal/database"
@@ -22,47 +22,52 @@ import (
 var envFile = flag.String("env", "", "Path to the .env file to load")
 
 func main() {
+	// Force glog to log to stderr natively instead of to temp files
+	flag.Set("logtostderr", "true")
 	flag.Parse()
 
 	// Dynamically load the .env file values into runtime variables only if specified
 	if *envFile != "" {
 		if err := godotenv.Load(*envFile); err != nil {
-			log.Printf("Warning: Failed to load .env file at %s: %v", *envFile, err)
+			glog.Warningf("Failed to load .env file path=%s error=%v", *envFile, err)
 		} else {
-			log.Printf("Loaded environment variables from %s", *envFile)
+			glog.Infof("Loaded environment variables path=%s", *envFile)
 		}
 	} else {
-		log.Println("Note: No -env flag provided; executing strictly with system environment variables.")
+		glog.Info("No -env flag provided; executing strictly with system environment variables.")
 	}
 
-	log.Println("Initializing Boardroom...")
-	log.Printf("LLM Provider: %s", os.Getenv("LLM_PROVIDER"))
-	log.Printf("LLM Model: %s", os.Getenv("LLM_MODEL"))
+	glog.Info("Initializing Boardroom...")
 
-	// Initialize LLM Client via dependency injection
 	provider := os.Getenv("LLM_PROVIDER")
 	if provider == "" {
 		provider = "ollama"
 	}
+	model := os.Getenv("LLM_MODEL")
+
+	glog.Infof("LLM Configuration provider=%s model=%s", provider, model)
 
 	var llmClient llm.Client
 	switch provider {
 	case "ollama":
 		client, err := ollama.NewClient()
 		if err != nil {
-			log.Fatalf("Failed to initialize Ollama client: %v", err)
+			glog.Errorf("Failed to initialize Ollama client error=%v", err)
+			os.Exit(1)
 		}
 		llmClient = client
 	case "gemini":
-		client, err := gemini.NewClient(os.Getenv("GEMINI_API_KEY"), os.Getenv("LLM_MODEL"))
+		client, err := gemini.NewClient(os.Getenv("GEMINI_API_KEY"), model)
 		if err != nil {
-			log.Fatalf("Failed to initialize Gemini client: %v", err)
+			glog.Errorf("Failed to initialize Gemini client error=%v", err)
+			os.Exit(1)
 		}
 		llmClient = client
 	case "fake", "mock":
 		llmClient = fake.NewClient()
 	default:
-		log.Fatalf("Unsupported LLM provider: %s", provider)
+		glog.Errorf("Unsupported LLM provider provider=%s", provider)
+		os.Exit(1)
 	}
 
 	storageRoot := os.Getenv("STORAGE_ROOT")
@@ -76,13 +81,17 @@ func main() {
 	// Initialize DBs
 	sqlite, err := database.NewSQLiteDB(sqlPath)
 	if err != nil {
-		log.Fatalf("Failed to init SQLite: %v", err)
+		glog.Errorf("Failed to init SQLite error=%v", err)
+		os.Exit(1)
 	}
 	defer sqlite.Close()
 
-	memory, err := database.NewVectorMemory(vectorPath)
+	// Always use the local hash-based embedding — no external API calls needed
+	glog.Info("Using local FNV hash-based embedding (fully offline, no API key required)")
+	memory, err := database.NewVectorMemory(vectorPath, database.LocalEmbeddingFunc())
 	if err != nil {
-		log.Fatalf("Failed to init Vector Memory: %v", err)
+		glog.Errorf("Failed to init Vector Memory error=%v", err)
+		os.Exit(1)
 	}
 
 	// Initialize Orchestrator
@@ -96,9 +105,10 @@ func main() {
 		if port == "" {
 			port = "8080"
 		}
-		log.Printf("Starting Server on :%s", port)
+		glog.Infof("Starting Server port=%s", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server startup failed: %v", err)
+			glog.Errorf("Server startup failed error=%v", err)
+			os.Exit(1)
 		}
 	}()
 
@@ -106,9 +116,10 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Shutting down the server gracefully...")
+	glog.Info("Shutting down the server gracefully...")
 	if err := srv.Shutdown(); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
+		glog.Errorf("Server forced to shutdown error=%v", err)
+		os.Exit(1)
 	}
-	log.Println("Server exiting")
+	glog.Info("Server exiting")
 }

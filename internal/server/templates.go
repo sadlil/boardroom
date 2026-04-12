@@ -64,3 +64,14 @@ func buildBoardData(isLive bool, useDynamicAgents bool) BoardData {
 		UseDynamicAgents: useDynamicAgents,
 	}
 }
+
+type MemorySnippet struct {
+	ID      string
+	Content string
+}
+
+type MemoriesData struct {
+	CoreMemory   map[string]string
+	LearnedFacts []map[string]string
+	Snippets     []MemorySnippet
+}
