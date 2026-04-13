@@ -98,13 +98,13 @@ func main() {
 	orchestrator := agents.NewOrchestrator(llmClient, sqlite, memory)
 
 	// Setup Server
-	srv := server.NewServer(sqlite, memory, orchestrator)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	srv := server.NewServer(sqlite, memory, orchestrator, port)
 
 	go func() {
-		port := os.Getenv("PORT")
-		if port == "" {
-			port = "8080"
-		}
 		glog.Infof("Starting Server port=%s", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			glog.Errorf("Server startup failed error=%v", err)

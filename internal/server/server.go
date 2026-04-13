@@ -15,7 +15,7 @@ type Server struct {
 }
 
 // NewServer creates and wires up the HTTP server with all routes.
-func NewServer(sqlite *database.SQLiteDB, memory *database.VectorMemory, orchestrator *agents.Orchestrator) *Server {
+func NewServer(sqlite *database.SQLiteDB, memory *database.VectorMemory, orchestrator *agents.Orchestrator, port string) *Server {
 	mux := http.NewServeMux()
 
 	h := &Handler{
@@ -28,7 +28,7 @@ func NewServer(sqlite *database.SQLiteDB, memory *database.VectorMemory, orchest
 
 	return &Server{
 		httpServer: &http.Server{
-			Addr:              ":8080",
+			Addr:              ":" + port,
 			Handler:           SecurityMiddleware(mux),
 			ReadHeaderTimeout: 5 * time.Second,
 			ReadTimeout:       10 * time.Second,

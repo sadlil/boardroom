@@ -2,16 +2,19 @@ package server
 
 import (
 	"fmt"
-	"github.com/golang/glog"
 	"os"
 	"strconv"
+	"sync"
 	"time"
+
+	"github.com/golang/glog"
 
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 // SessionData holds the state for a single debate session.
 type SessionData struct {
+	mu               sync.RWMutex // Protects AgentOutputs
 	Prompt           string
 	AgentOutputs     map[string]string
 	Status           string // "running" or "completed"
@@ -68,6 +71,10 @@ func (s *SessionStore) AppendOutput(id, agentID, chunk string) {
 	if !ok {
 		return
 	}
+
+	val.mu.Lock()
+	defer val.mu.Unlock()
+
 	if val.AgentOutputs == nil {
 		val.AgentOutputs = make(map[string]string)
 	}
