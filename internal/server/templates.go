@@ -73,6 +73,7 @@ type MemorySnippet struct {
 }
 
 type MemoriesData struct {
+	IsEditing    bool
 	CoreMemory   map[string]string
 	LearnedFacts map[string]string
 	Snippets     []MemorySnippet

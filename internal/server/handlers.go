@@ -296,6 +296,7 @@ func (h *Handler) handleGetMemories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := MemoriesData{
+		IsEditing:    r.URL.Query().Get("edit") == "true",
 		CoreMemory:   coreMemory,
 		LearnedFacts: learnedFacts,
 		Snippets:     snippets,

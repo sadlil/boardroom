@@ -2,7 +2,12 @@
   <!-- Click outside to close -->
   <div class="absolute inset-0 cursor-pointer" onclick="document.getElementById('modal-container').innerHTML = ''"></div>
   
+  {{ if .IsEditing }}
   <form hx-post="/api/memories" hx-target="#memories-modal-overlay" hx-swap="outerHTML" class="relative w-full max-w-4xl max-h-[85vh] bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-slow">
+  {{ else }}
+  <div class="relative w-full max-w-4xl max-h-[85vh] bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-fade-in-slow">
+  {{ end }}
+  
     <!-- Header -->
     <div class="flex items-center justify-between px-6 py-4 border-b border-zinc-800/60 bg-zinc-900/90 backdrop-blur relative z-10">
       <div class="flex items-center space-x-3">
@@ -15,10 +20,19 @@
         </div>
       </div>
       <div class="flex items-center space-x-2">
-        <button type="submit" class="text-zinc-300 hover:text-white bg-indigo-500/20 hover:bg-indigo-500/40 px-3 py-1.5 rounded-lg border border-indigo-500/30 transition duration-200 text-sm font-medium">
-          Save Changes
-        </button>
-        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" class="text-zinc-500 hover:text-red-400 hover:bg-red-400/10 p-1.5 rounded-lg transition duration-200">
+        {{ if .IsEditing }}
+          <button type="button" hx-get="/api/memories" hx-target="#memories-modal-overlay" hx-swap="outerHTML" class="text-zinc-500 hover:text-zinc-300 font-medium px-3 py-1.5 rounded-lg transition duration-200 text-sm">
+            Cancel
+          </button>
+          <button type="submit" class="text-zinc-300 hover:text-white bg-indigo-500/20 hover:bg-indigo-500/40 px-3 py-1.5 rounded-lg border border-indigo-500/30 transition duration-200 text-sm font-medium">
+            Save Changes
+          </button>
+        {{ else }}
+          <button type="button" hx-get="/api/memories?edit=true" hx-target="#memories-modal-overlay" hx-swap="outerHTML" class="text-zinc-400 hover:text-white bg-zinc-800/50 hover:bg-zinc-700/50 px-3 py-1.5 rounded-lg border border-zinc-700/30 transition duration-200 text-sm font-medium">
+            Edit Profile
+          </button>
+        {{ end }}
+        <button type="button" onclick="document.getElementById('modal-container').innerHTML = ''" class="text-zinc-500 hover:text-red-400 hover:bg-red-400/10 p-1.5 rounded-lg transition duration-200 ml-2">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
       </div>
@@ -38,7 +52,11 @@
           {{ range $key, $value := .CoreMemory }}
               <div class="flex flex-col">
                 <span class="text-emerald-500/70 uppercase tracking-widest text-[9px] font-bold mb-1 font-mono">{{ $key }}</span>
+                {{ if $.IsEditing }}
                 <textarea name="core_{{ $key }}" rows="1" class="text-zinc-300 text-sm leading-relaxed bg-transparent border-b border-zinc-800/50 focus:border-emerald-500/50 outline-none resize-none transition-colors overflow-hidden" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">{{ $value }}</textarea>
+                {{ else }}
+                <div class="text-zinc-300 text-sm leading-relaxed">{{ $value }}</div>
+                {{ end }}
               </div>
           {{ end }}
         </div>
@@ -56,8 +74,12 @@
         <div class="p-5 bg-indigo-500/5 rounded-xl border border-indigo-500/20 shadow-inner grid grid-cols-1 gap-y-4 gap-x-6 sm:grid-cols-2">
           {{ range $key, $value := .LearnedFacts }}
               <div class="flex flex-col">
-                <span class="text-indigo-400/80 uppercase tracking-widest text-[9px] font-bold mb-1 font-mono">{{ $key }} <span class="text-[8px] text-zinc-600 normal-case font-sans ml-1">(clear to delete)</span></span>
+                <span class="text-indigo-400/80 uppercase tracking-widest text-[9px] font-bold mb-1 font-mono">{{ $key }} {{ if $.IsEditing }}<span class="text-[8px] text-zinc-600 normal-case font-sans ml-1">(clear to delete)</span>{{ end }}</span>
+                {{ if $.IsEditing }}
                 <textarea name="fact_{{ $key }}" rows="1" class="text-indigo-100 text-sm leading-relaxed bg-transparent border-b border-indigo-500/20 focus:border-indigo-400/60 outline-none resize-none transition-colors overflow-hidden" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'">{{ $value }}</textarea>
+                {{ else }}
+                <div class="text-indigo-100 text-sm leading-relaxed">{{ $value }}</div>
+                {{ end }}
               </div>
           {{ end }}
         </div>
@@ -92,9 +114,15 @@
       </section>
 
     </div>
+  
+  {{ if .IsEditing }}
   </form>
+  {{ else }}
+  </div>
+  {{ end }}
 </div>
 
+{{ if .IsEditing }}
 <script>
   // Ensure textareas are expanded to fit content initially
   setTimeout(() => {
@@ -104,3 +132,4 @@
     });
   }, 10);
 </script>
+{{ end }}
