@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/sadlil/boardroom/internal/agents"
@@ -265,6 +266,30 @@ func (h *Handler) handleGetMemories(w http.ResponseWriter, r *http.Request) {
 				if err := json.Unmarshal([]byte(rawCore), &coreMemory); err != nil {
 					glog.Errorf("Failed to parse core memory JSON: %v | Raw: %s", err, rawCore)
 					coreMemory = map[string]string{"Raw_Profile": rawCore}
+				}
+			}
+
+			// Perform one-time migration of legacy stranded facts
+			if len(parts) > 1 {
+				lastBlock := strings.TrimSpace(parts[len(parts)-1])
+				var legacyFacts map[string]string
+				if err := agents.ExtractJSON(lastBlock, &legacyFacts); err == nil {
+					migratedAny := false
+					for k, v := range legacyFacts {
+						if v != "" {
+							h.sqlite.UpsertUserFact(k, v)
+							if learnedFacts == nil {
+								learnedFacts = make(map[string]string)
+							}
+							learnedFacts[k] = v // make it visible instantly
+							migratedAny = true
+						}
+					}
+					// If we successfully migrated, wipe the log from profile_data
+					if migratedAny && rawCore != "" {
+						glog.Info("Migrated legacy facts to user_facts table")
+						h.sqlite.SaveProfile(rawCore)
+					}
 				}
 			}
 		}
