@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/golang/glog"
 	"github.com/sadlil/boardroom/internal/agents"
@@ -85,7 +84,7 @@ func (h *Handler) handleConfig(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleGetSession(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("id")
 	session := h.sessions.Get(sessionID)
-	
+
 	var mem map[string]string
 	useDynamicAgents := false
 
@@ -256,4 +255,37 @@ func (h *Handler) handleGetMemories(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	ui.Render(w, "memories_modal.html", data)
+}
+
+func (h *Handler) handleUpdateMemories(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	coreValues := make(map[string]string)
+	for key, values := range r.PostForm {
+		val := values[0]
+		if len(key) > 5 && key[:5] == "core_" {
+			coreValues[key[5:]] = val
+		} else if len(key) > 5 && key[:5] == "fact_" {
+			cat := key[5:]
+			if val == "" {
+				h.sqlite.DeleteUserFact(cat)
+			} else {
+				h.sqlite.UpsertUserFact(cat, val)
+			}
+		}
+	}
+
+	if len(coreValues) > 0 {
+		coreJSON, err := json.Marshal(coreValues)
+		if err == nil {
+			h.sqlite.SaveProfile(string(coreJSON))
+		}
+	}
+
+	// Add a success toast event
+	w.Header().Set("HX-Trigger", "memories-updated")
+	h.handleGetMemories(w, r)
 }

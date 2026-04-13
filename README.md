@@ -15,7 +15,7 @@ The Boardroom is an AI-powered decision intelligence platform that simulates a f
 - **Multi-Agent Debate** — Multiple specialized AI agents analyze your problem from different angles simultaneously.
 - **Streaming Responses** — Watch each board member's analysis stream in real-time via Server-Sent Events.
 - **Dynamic Experts** — Optionally summon AI-recruited domain specialists tailored to your specific topic.
-- **Provider Flexibility** — Swap between local models (Ollama), cloud APIs (Gemini).
+- **Provider Flexibility** — Swap between local models (Ollama), cloud APIs (OpenAI, Anthropic, Google Gemini, xAI, Groq, OpenRouter, DeepSeek, Mistral).
 
 ---
 
@@ -87,7 +87,7 @@ Open **[http://localhost:8080](http://localhost:8080)** and present your dilemma
 |---|---|
 | Backend | Go · `net/http` |
 | Frontend | HTML5 · HTMX · Tailwind CSS (CDN) |
-| AI Providers | Ollama (local) · Google Gemini (cloud) |
+| AI Providers | Ollama (local) · OpenAI · Anthropic · Google Gemini · xAI · Groq · OpenRouter · DeepSeek · Mistral |
 | Streaming | Native Server-Sent Events (SSE) |
 | Storage | SQLite (sessions) · Vector index (memory) |
 | Deployment | Docker · `sadlil/boardroom:latest` |

@@ -103,6 +103,11 @@ func (s *SQLiteDB) UpsertUserFact(category, value string) error {
 	return err
 }
 
+func (s *SQLiteDB) DeleteUserFact(category string) error {
+	_, err := s.db.Exec(`DELETE FROM user_facts WHERE category = ?`, category)
+	return err
+}
+
 // GetUserFacts returns all user facts as a map.
 func (s *SQLiteDB) GetUserFacts() (map[string]string, error) {
 	rows, err := s.db.Query(`SELECT category, value FROM user_facts`)

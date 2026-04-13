@@ -59,6 +59,41 @@ export LLM_PROVIDER=ollama
 2. Set `LLM_MODEL=gemini-1.5-flash` (or `gemini-1.5-pro`)
 3. Set `GEMINI_API_KEY=your_key`
 
+### OpenAI (Cloud)
+1. Set `LLM_PROVIDER=openai`
+2. Set `LLM_MODEL=gpt-4o` (or `gpt-4-turbo`)
+3. Set `OPENAI_API_KEY=your_key`
+
+### Anthropic Claude (Cloud)
+1. Set `LLM_PROVIDER=anthropic`
+2. Set `LLM_MODEL=claude-3-5-sonnet-latest`
+3. Set `ANTHROPIC_API_KEY=your_key`
+
+### xAI Grok (Cloud)
+1. Set `LLM_PROVIDER=xai`
+2. Set `LLM_MODEL=grok-beta`
+3. Set `XAI_API_KEY=your_key`
+
+### Groq (Cloud)
+1. Set `LLM_PROVIDER=groq`
+2. Set `LLM_MODEL=llama-3.3-70b-versatile`
+3. Set `GROQ_API_KEY=your_key`
+
+### OpenRouter (Cloud)
+1. Set `LLM_PROVIDER=openrouter`
+2. Set `LLM_MODEL=anthropic/claude-3.5-sonnet`
+3. Set `OPENROUTER_API_KEY=your_key`
+
+### DeepSeek (Cloud)
+1. Set `LLM_PROVIDER=deepseek`
+2. Set `LLM_MODEL=deepseek-chat`
+3. Set `DEEPSEEK_API_KEY=your_key`
+
+### Mistral (Cloud)
+1. Set `LLM_PROVIDER=mistral`
+2. Set `LLM_MODEL=mistral-large-latest`
+3. Set `MISTRAL_API_KEY=your_key`
+
 ### Fake LLM (Testing)
 - Set `LLM_PROVIDER=fake` to use the built-in mock board for development.
 
@@ -71,11 +106,18 @@ export LLM_PROVIDER=ollama
 | `-env` flag | **Required** to load a `.env` file. | (none) |
 | `PORT` | Local port for the server. | `8080` |
 | `STORAGE_ROOT` | Path for DB and Vector index data. | `./data` |
-| `LLM_PROVIDER` | `ollama`, `gemini`, or `fake`. | `ollama` |
+| `LLM_PROVIDER` | `ollama`, `gemini`, `openai`, `anthropic`, `xai`, `groq`, `openrouter`, `deepseek`, `mistral`, or `fake`. | `ollama` |
 | `LLM_MODEL` | The specific model ID to use. | `gemma3:1b` |
 | `MAX_SESSIONS` | Max sessions in LRU memory cache. | `100` |
 | `MAX_CONCURRENT_AGENTS` | Max parallel LLM inferences. | `3` |
 | `GEMINI_API_KEY` | Google AI Studio Key. | (Required for Gemini) |
+| `OPENAI_API_KEY` | OpenAI API Key. | (Required for OpenAI) |
+| `ANTHROPIC_API_KEY` | Anthropic API Key. | (Required for Anthropic) |
+| `XAI_API_KEY` | xAI API Key. | (Required for xAI) |
+| `GROQ_API_KEY` | Groq API Key. | (Required for Groq) |
+| `OPENROUTER_API_KEY` | OpenRouter API Key. | (Required for OpenRouter) |
+| `DEEPSEEK_API_KEY` | DeepSeek API Key. | (Required for DeepSeek) |
+| `MISTRAL_API_KEY` | Mistral API Key. | (Required for Mistral) |
 
 ---
 
