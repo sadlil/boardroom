@@ -85,30 +85,6 @@ func (f ScribeFacts) HasContent() bool {
 		f.Constraints != "" || f.Preferences != "" || f.Domain != ""
 }
 
-// FormatForProfile serializes non-empty facts into a structured append string.
-func (f ScribeFacts) FormatForProfile() string {
-	var parts []string
-	if f.Identity != "" {
-		parts = append(parts, fmt.Sprintf("  \"identity\": %q", f.Identity))
-	}
-	if f.Financial != "" {
-		parts = append(parts, fmt.Sprintf("  \"financial\": %q", f.Financial))
-	}
-	if f.Goals != "" {
-		parts = append(parts, fmt.Sprintf("  \"goals\": %q", f.Goals))
-	}
-	if f.Constraints != "" {
-		parts = append(parts, fmt.Sprintf("  \"constraints\": %q", f.Constraints))
-	}
-	if f.Preferences != "" {
-		parts = append(parts, fmt.Sprintf("  \"preferences\": %q", f.Preferences))
-	}
-	if f.Domain != "" {
-		parts = append(parts, fmt.Sprintf("  \"domain\": %q", f.Domain))
-	}
-	return "{\n" + strings.Join(parts, ",\n") + "\n}"
-}
-
 // runScribe processes the debate and updates SQLite/VectorDB memories silently in the background.
 func (o *Orchestrator) runScribe(ctx context.Context, prompt, contextJSON string, wave2 []string, deciderOutput string) {
 	startTime := time.Now()
@@ -156,37 +132,39 @@ func (o *Orchestrator) runScribe(ctx context.Context, prompt, contextJSON string
 		glog.Info("[Scribe] New facts detected:")
 		if result.NewFacts.Identity != "" {
 			glog.Infof("[Scribe]   → Identity: %s\n", result.NewFacts.Identity)
+			if err := o.sqlite.UpsertUserFact("Identity", result.NewFacts.Identity); err != nil {
+				glog.Errorf("[Scribe] Failed to format identity fact: %v\n", err)
+			}
 		}
 		if result.NewFacts.Financial != "" {
 			glog.Infof("[Scribe]   → Financial: %s\n", result.NewFacts.Financial)
+			if err := o.sqlite.UpsertUserFact("Financial", result.NewFacts.Financial); err != nil {
+				glog.Errorf("[Scribe] Failed to format financial fact: %v\n", err)
+			}
 		}
 		if result.NewFacts.Goals != "" {
 			glog.Infof("[Scribe]   → Goals: %s\n", result.NewFacts.Goals)
+			if err := o.sqlite.UpsertUserFact("Goals", result.NewFacts.Goals); err != nil {
+				glog.Errorf("[Scribe] Failed to format goals fact: %v\n", err)
+			}
 		}
 		if result.NewFacts.Constraints != "" {
 			glog.Infof("[Scribe]   → Constraints: %s\n", result.NewFacts.Constraints)
+			if err := o.sqlite.UpsertUserFact("Constraints", result.NewFacts.Constraints); err != nil {
+				glog.Errorf("[Scribe] Failed to format constraints fact: %v\n", err)
+			}
 		}
 		if result.NewFacts.Preferences != "" {
 			glog.Infof("[Scribe]   → Preferences: %s\n", result.NewFacts.Preferences)
+			if err := o.sqlite.UpsertUserFact("Preferences", result.NewFacts.Preferences); err != nil {
+				glog.Errorf("[Scribe] Failed to format preferences fact: %v\n", err)
+			}
 		}
 		if result.NewFacts.Domain != "" {
 			glog.Infof("[Scribe]   → Domain: %s\n", result.NewFacts.Domain)
-		}
-
-		currentProfile, _ := o.sqlite.GetProfile()
-		appendBlock := "\n\n--- Learned Facts (auto-updated) ---\n" + result.NewFacts.FormatForProfile()
-
-		var newProfile string
-		if currentProfile != "" {
-			newProfile = currentProfile + appendBlock
-		} else {
-			newProfile = appendBlock
-		}
-
-		if err := o.sqlite.SaveProfile(newProfile); err != nil {
-			glog.Errorf("[Scribe] SQLite profile update failed: %v\n", err)
-		} else {
-			glog.Infof("[Scribe] SQLite profile updated (%d → %d chars)\n", len(currentProfile), len(newProfile))
+			if err := o.sqlite.UpsertUserFact("Domain", result.NewFacts.Domain); err != nil {
+				glog.Errorf("[Scribe] Failed to format domain fact: %v\n", err)
+			}
 		}
 	} else {
 		glog.Info("[Scribe] No new static facts discovered in this debate.")

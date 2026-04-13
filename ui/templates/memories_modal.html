@@ -50,18 +50,16 @@
           Autonomous Evolutionary Insights
         </h4>
         <div class="space-y-6">
-          {{ range .LearnedFacts }}
-            <div class="p-5 bg-indigo-500/5 rounded-xl border border-indigo-500/20 shadow-inner grid grid-cols-1 gap-y-4 gap-x-6 sm:grid-cols-2">
-              {{ range $key, $value := . }}
-                {{ if $value }}
-                  <div class="flex flex-col">
-                    <span class="text-indigo-400/80 uppercase tracking-widest text-[9px] font-bold mb-1 font-mono">{{ $key }}</span>
-                    <span class="text-indigo-100 text-sm leading-relaxed">{{ $value }}</span>
-                  </div>
-                {{ end }}
-              {{ end }}
-            </div>
+        <div class="p-5 bg-indigo-500/5 rounded-xl border border-indigo-500/20 shadow-inner grid grid-cols-1 gap-y-4 gap-x-6 sm:grid-cols-2">
+          {{ range $key, $value := .LearnedFacts }}
+            {{ if $value }}
+              <div class="flex flex-col">
+                <span class="text-indigo-400/80 uppercase tracking-widest text-[9px] font-bold mb-1 font-mono">{{ $key }}</span>
+                <span class="text-indigo-100 text-sm leading-relaxed">{{ $value }}</span>
+              </div>
+            {{ end }}
           {{ end }}
+        </div>
         </div>
       </section>
       {{ end }}

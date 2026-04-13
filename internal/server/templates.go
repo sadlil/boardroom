@@ -72,6 +72,6 @@ type MemorySnippet struct {
 
 type MemoriesData struct {
 	CoreMemory   map[string]string
-	LearnedFacts []map[string]string
+	LearnedFacts map[string]string
 	Snippets     []MemorySnippet
 }

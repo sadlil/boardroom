@@ -48,6 +48,11 @@ func NewSQLiteDB(dbPath string) (*SQLiteDB, error) {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS user_facts (
+            category TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     `)
 	if err != nil {
 		return nil, err
@@ -84,4 +89,35 @@ func (s *SQLiteDB) SaveProfile(profileData string) error {
             updated_at = excluded.updated_at
     `, profileData)
 	return err
+}
+
+// UpsertUserFact inserts or updates a user fact category.
+func (s *SQLiteDB) UpsertUserFact(category, value string) error {
+	_, err := s.db.Exec(`
+        INSERT INTO user_facts (category, value, updated_at) 
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(category) DO UPDATE SET 
+            value = excluded.value,
+            updated_at = excluded.updated_at
+    `, category, value)
+	return err
+}
+
+// GetUserFacts returns all user facts as a map.
+func (s *SQLiteDB) GetUserFacts() (map[string]string, error) {
+	rows, err := s.db.Query(`SELECT category, value FROM user_facts`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	facts := make(map[string]string)
+	for rows.Next() {
+		var category, value string
+		if err := rows.Scan(&category, &value); err != nil {
+			return nil, err
+		}
+		facts[category] = value
+	}
+	return facts, nil
 }

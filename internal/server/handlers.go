@@ -196,37 +196,16 @@ func (h *Handler) handleGetMemories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var coreMemory map[string]string
-	var learnedFacts []map[string]string
+
+	learnedFacts, err := h.sqlite.GetUserFacts()
+	if err != nil {
+		glog.Errorf("Failed to retrieve user facts: %v", err)
+	}
 
 	if profile != "" {
-		// Split by the well-known marker
-		parts := strings.Split(profile, "--- Learned Facts (auto-updated) ---")
-		
-		// 1. Process the Core Memory (always the first block)
-		if len(parts) > 0 {
-			rawCore := strings.TrimSpace(parts[0])
-			if rawCore != "" {
-				if err := json.Unmarshal([]byte(rawCore), &coreMemory); err != nil {
-					glog.Errorf("Failed to parse core memory JSON: %v | Raw: %s", err, rawCore)
-					coreMemory = map[string]string{"Raw Profile": rawCore}
-				}
-			}
-		}
-		
-		// 2. Process any subsequent Learned Facts blocks
-		if len(parts) > 1 {
-			for _, p := range parts[1:] {
-				rawFact := strings.TrimSpace(p)
-				if rawFact == "" {
-					continue
-				}
-				var factMap map[string]string
-				if err := json.Unmarshal([]byte(rawFact), &factMap); err != nil {
-					glog.Errorf("Failed to parse learned fact JSON: %v", err)
-					continue
-				}
-				learnedFacts = append(learnedFacts, factMap)
-			}
+		if err := json.Unmarshal([]byte(profile), &coreMemory); err != nil {
+			glog.Errorf("Failed to parse core memory JSON: %v | Raw: %s", err, profile)
+			coreMemory = map[string]string{"Raw Profile": profile}
 		}
 	}
 
