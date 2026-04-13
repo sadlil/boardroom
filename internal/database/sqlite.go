@@ -121,3 +121,55 @@ func (s *SQLiteDB) GetUserFacts() (map[string]string, error) {
 	}
 	return facts, nil
 }
+
+type SessionRecord struct {
+	ID        string
+	Prompt    string
+	CreatedAt string
+}
+
+func (s *SQLiteDB) SaveSession(id, prompt string) error {
+	_, err := s.db.Exec(`INSERT INTO sessions (id, prompt) VALUES (?, ?)`, id, prompt)
+	return err
+}
+
+func (s *SQLiteDB) SaveSessionLog(sessionID, agentRole, content string) error {
+	_, err := s.db.Exec(`INSERT INTO session_logs (session_id, agent_role, content) VALUES (?, ?, ?)`, sessionID, agentRole, content)
+	return err
+}
+
+func (s *SQLiteDB) GetSessions() ([]SessionRecord, error) {
+	rows, err := s.db.Query(`SELECT id, prompt, created_at FROM sessions ORDER BY created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var sessions []SessionRecord
+	for rows.Next() {
+		var r SessionRecord
+		if err := rows.Scan(&r.ID, &r.Prompt, &r.CreatedAt); err != nil {
+			return nil, err
+		}
+		sessions = append(sessions, r)
+	}
+	return sessions, nil
+}
+
+func (s *SQLiteDB) GetSessionLogs(sessionID string) (map[string]string, error) {
+	rows, err := s.db.Query(`SELECT agent_role, content FROM session_logs WHERE session_id = ?`, sessionID, )
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	logs := make(map[string]string)
+	for rows.Next() {
+		var role, content string
+		if err := rows.Scan(&role, &content); err != nil {
+			return nil, err
+		}
+		logs[role] = content
+	}
+	return logs, nil
+}

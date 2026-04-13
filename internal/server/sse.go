@@ -84,5 +84,16 @@ func (h *Handler) handleSSEStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.sessions.MarkCompleted(sessionID)
-	glog.Infof("SSE stream completed for session %s (data preserved in memory)\n", sessionID)
+	
+	// Save outputs to SQLite
+	sessionData := h.sessions.Get(sessionID)
+	if sessionData != nil {
+		sessionData.mu.RLock()
+		for role, content := range sessionData.AgentOutputs {
+			h.sqlite.SaveSessionLog(sessionID, role, content)
+		}
+		sessionData.mu.RUnlock()
+	}
+
+	glog.Infof("SSE stream completed for session %s (data preserved in memory & sqlite)\n", sessionID)
 }

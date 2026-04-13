@@ -1,0 +1,42 @@
+<div class="max-w-4xl mx-auto mt-8 relative" id="history-panel">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h2 class="text-2xl font-bold text-zinc-100 flex items-center">
+        <svg class="w-6 h-6 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        Debate History
+      </h2>
+      <p class="text-sm text-zinc-500 mt-1">Review past executive decisions and analyses.</p>
+    </div>
+    <button hx-get="/api/init" hx-target="#board-panels" class="px-4 py-2 border border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800 rounded-lg text-sm transition">
+      &larr; Back to Command Center
+    </button>
+  </div>
+
+  <div class="space-y-4">
+    {{ if . }}
+      {{ range . }}
+      <div class="p-6 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-indigo-500/30 transition shadow-sm group">
+        <div class="flex items-start justify-between">
+          <div class="flex-1">
+            <h3 class="text-lg font-semibold text-zinc-200 line-clamp-2">
+              {{ .Prompt }}
+            </h3>
+            <p class="text-xs text-zinc-500 font-mono mt-2 flex items-center">
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              {{ .CreatedAt }}
+            </p>
+          </div>
+          <button hx-get="/api/session?id={{ .ID }}" hx-target="#board-panels" class="ml-4 px-3 py-1.5 bg-indigo-500/10 text-indigo-400 text-sm rounded border border-indigo-500/20 hover:bg-indigo-500 hover:text-white transition whitespace-nowrap">
+            View Debate
+          </button>
+        </div>
+      </div>
+      {{ end }}
+    {{ else }}
+      <div class="text-center py-12 border border-dashed border-zinc-800/60 rounded-xl bg-zinc-900/20">
+        <svg class="w-8 h-8 text-zinc-700 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+        <p class="text-zinc-500 text-sm">No recorded debates found.</p>
+      </div>
+    {{ end }}
+  </div>
+</div>

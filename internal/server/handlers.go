@@ -81,17 +81,38 @@ func (h *Handler) handleConfig(w http.ResponseWriter, r *http.Request) {
 	ui.Render(w, "config_badge.html", ConfigData{Provider: provider, Model: model})
 }
 
-// handleGetSession restores a completed session from memory.
+// handleGetSession restores a completed session from memory or db.
 func (h *Handler) handleGetSession(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("id")
 	session := h.sessions.Get(sessionID)
+	
+	var mem map[string]string
+	useDynamicAgents := false
+
 	if session == nil {
-		http.Error(w, "Session not found or expired", http.StatusNotFound)
-		return
+		logs, err := h.sqlite.GetSessionLogs(sessionID)
+		if err != nil || len(logs) == 0 {
+			http.Error(w, "Session not found or expired", http.StatusNotFound)
+			return
+		}
+		mem = logs
+		for k := range logs {
+			if len(k) > 4 && k[:4] == "dyn_" {
+				useDynamicAgents = true
+			}
+		}
+	} else {
+		session.mu.RLock()
+		mem = make(map[string]string)
+		for k, v := range session.AgentOutputs {
+			mem[k] = v
+		}
+		session.mu.RUnlock()
+		useDynamicAgents = session.UseDynamicAgents
 	}
 
-	memJSON, _ := json.Marshal(session.AgentOutputs)
-	boardHTML, _ := ui.RenderToString("board.html", buildBoardData(false, session.UseDynamicAgents))
+	memJSON, _ := json.Marshal(mem)
+	boardHTML, _ := ui.RenderToString("board.html", buildBoardData(false, useDynamicAgents))
 
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(boardHTML))
@@ -138,12 +159,30 @@ func (h *Handler) handleStartDebate(w http.ResponseWriter, r *http.Request) {
 	// Create session and render the board
 	sessionID := h.sessions.Create(fullPrompt, useDynamicAgents)
 
+	go func() {
+		if err := h.sqlite.SaveSession(sessionID, prompt); err != nil {
+			glog.Errorf("Failed to save session to SQLite: %v", err)
+		}
+	}()
+
 	w.Header().Set("HX-Push-Url", "?session="+sessionID)
 	w.Header().Set("Content-Type", "text/html")
 
 	boardHTML, _ := ui.RenderToString("board.html", buildBoardData(true, useDynamicAgents))
 	w.Write([]byte(boardHTML))
 	ui.Render(w, "sse_connect.html", SSEConnectData{SessionID: sessionID})
+}
+
+// handleGetHistory fetches past sessions and displays them.
+func (h *Handler) handleGetHistory(w http.ResponseWriter, r *http.Request) {
+	sessions, err := h.sqlite.GetSessions()
+	if err != nil {
+		http.Error(w, "Failed to load history", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html")
+	w.Header().Set("HX-Push-Url", "/?view=history")
+	ui.Render(w, "history.html", sessions)
 }
 
 // --- Private helpers ---

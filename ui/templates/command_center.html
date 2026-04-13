@@ -61,11 +61,16 @@
     </div>
 
     <h3 class="text-base font-semibold text-zinc-300 mb-2">Your board is ready</h3>
-    <p class="text-zinc-500 text-sm max-w-sm leading-relaxed">
+    <p class="text-zinc-500 text-sm max-w-sm leading-relaxed mb-6">
       Describe a decision, dilemma, or strategy above. Your AI advisors will analyze it from
       <span class="text-zinc-400">optimistic</span>,
       <span class="text-zinc-400">pessimistic</span>, and
       <span class="text-zinc-400">financial</span> perspectives — then deliver a final verdict.
     </p>
+
+    <button hx-get="/api/history" hx-target="#board-panels" class="px-4 py-2 border border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800 rounded-lg text-sm text-zinc-300 transition flex items-center justify-center mx-auto shadow-sm">
+      <svg class="w-4 h-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      View Past Debates
+    </button>
   </div>
 </div>
