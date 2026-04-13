@@ -82,8 +82,25 @@ func (o *Orchestrator) runWave1(ctx context.Context, prompt string, callback Str
 		staticProfile = "No user profile available. The user has not completed onboarding."
 		glog.Info("[Context] No profile found — using default placeholder.")
 	} else {
+		// Strip off legacy factual appends if present so we cleanly separate
+		parts := strings.Split(staticProfile, "--- Learned Facts (auto-updated) ---")
+		if len(parts) > 0 {
+			staticProfile = strings.TrimSpace(parts[0])
+		}
 		glog.Infof("[Context] ✓ Profile loaded (%d chars)\n", len(staticProfile))
 	}
+
+	facts, errFacts := o.sqlite.GetUserFacts()
+	var factsStr string
+	if errFacts == nil && len(facts) > 0 {
+		var b strings.Builder
+		for k, v := range facts {
+			b.WriteString(fmt.Sprintf("  %q: %q,\n", k, v))
+		}
+		factsStr = "\n\n--- Learned Facts ---\n{\n" + b.String() + "}"
+	}
+
+	combinedProfile := staticProfile + factsStr
 
 	// B) Fetch Semantic History (top 3 most relevant past decisions)
 	glog.Info("[Context] Querying vector DB for relevant past decisions...")
@@ -117,7 +134,7 @@ EXECUTIVE MEMORY SYSTEM — CONFIDENTIAL CONTEXT
 ══════════════════════════════════════════════
 Use the above context to deeply personalize your analysis.
 Reference specific profile details and past decisions when relevant.
-══════════════════════════════════════════════`, staticProfile, historyStr)
+══════════════════════════════════════════════`, combinedProfile, historyStr)
 
 	augmentedChiefOfStaff := ChiefOfStaff
 	augmentedChiefOfStaff.SystemPrompt = ChiefOfStaff.SystemPrompt + contextBlock

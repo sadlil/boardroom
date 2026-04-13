@@ -3,6 +3,8 @@ package agents
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
 )
 
 // Agent defines a board member with its identity and behavior.
@@ -46,22 +48,22 @@ func FormatOutput(agentName, output string) string {
 	return fmt.Sprintf("**[%s]**\n%s", agentName, output)
 }
 
-// ExtractJSON robustly extracts a JSON object from a string that may contain
-// markdown fences or conversational text around it.
 func ExtractJSON(raw string, target any) error {
-	// Use a simple approach: find first { and last }
-	start := -1
-	end := -1
-	for i, c := range raw {
-		if c == '{' && start == -1 {
-			start = i
-		}
-		if c == '}' {
-			end = i
+	// 1. Try to find markdown code block
+	re := regexp.MustCompile("(?s)```(?:json)?\n(.*?)\n```")
+	matches := re.FindStringSubmatch(raw)
+	if len(matches) > 1 {
+		if err := json.Unmarshal([]byte(matches[1]), target); err == nil {
+			return nil
 		}
 	}
-	if start == -1 || end == -1 || end <= start {
-		return fmt.Errorf("no JSON object found in response")
+
+	// 2. Fallback to extracting everything between first { and last }
+	start := strings.IndexByte(raw, '{')
+	end := strings.LastIndexByte(raw, '}')
+	if start != -1 && end != -1 && end > start {
+		return json.Unmarshal([]byte(raw[start:end+1]), target)
 	}
-	return json.Unmarshal([]byte(raw[start:end+1]), target)
+
+	return fmt.Errorf("no JSON object found in response")
 }

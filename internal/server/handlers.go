@@ -257,9 +257,16 @@ func (h *Handler) handleGetMemories(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if profile != "" {
-		if err := json.Unmarshal([]byte(profile), &coreMemory); err != nil {
-			glog.Errorf("Failed to parse core memory JSON: %v | Raw: %s", err, profile)
-			coreMemory = map[string]string{"Raw Profile": profile}
+		// Maintain backwards compatibility with legacy profiles that appended facts
+		parts := strings.Split(profile, "--- Learned Facts (auto-updated) ---")
+		if len(parts) > 0 {
+			rawCore := strings.TrimSpace(parts[0])
+			if rawCore != "" {
+				if err := json.Unmarshal([]byte(rawCore), &coreMemory); err != nil {
+					glog.Errorf("Failed to parse core memory JSON: %v | Raw: %s", err, rawCore)
+					coreMemory = map[string]string{"Raw_Profile": rawCore}
+				}
+			}
 		}
 	}
 
