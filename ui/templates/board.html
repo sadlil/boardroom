@@ -117,7 +117,14 @@
                         <p class="text-zinc-600 text-[10px] uppercase tracking-widest mt-0.5">Final executive decision</p>
                     </div>
                 </div>
-                <div class="w-3 h-3 rounded-full bg-zinc-400 {{.PulseClass}} shadow-sm shadow-white/20"></div>
+                <div class="flex items-center space-x-4">
+                  {{ if .PulseClass }}
+                  <button id="cancel-debate-btn" hx-post="/api/cancel?session={{.SessionID}}" hx-swap="none" onclick="this.innerHTML='Canceling...'; this.disabled=true; this.classList.add('opacity-50');" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-md text-[10px] font-semibold tracking-wider uppercase transition">
+                    Cancel Debate
+                  </button>
+                  {{ end }}
+                  <div class="w-3 h-3 rounded-full bg-zinc-400 {{.PulseClass}} shadow-sm shadow-white/20"></div>
+                </div>
             </div>
 
             <div class="relative pl-1 text-zinc-300 font-sans prose prose-invert prose-zinc prose-lg max-w-none leading-relaxed overflow-y-auto max-h-[40rem] pr-4" id="decider-stream">

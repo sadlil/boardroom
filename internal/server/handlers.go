@@ -111,7 +111,7 @@ func (h *Handler) handleGetSession(w http.ResponseWriter, r *http.Request) {
 	}
 
 	memJSON, _ := json.Marshal(mem)
-	boardHTML, _ := ui.RenderToString("board.html", buildBoardData(false, useDynamicAgents))
+	boardHTML, _ := ui.RenderToString("board.html", buildBoardData(sessionID, false, useDynamicAgents))
 
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(boardHTML))
@@ -167,7 +167,7 @@ func (h *Handler) handleStartDebate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("HX-Push-Url", "?session="+sessionID)
 	w.Header().Set("Content-Type", "text/html")
 
-	boardHTML, _ := ui.RenderToString("board.html", buildBoardData(true, useDynamicAgents))
+	boardHTML, _ := ui.RenderToString("board.html", buildBoardData(sessionID, true, useDynamicAgents))
 	w.Write([]byte(boardHTML))
 	ui.Render(w, "sse_connect.html", SSEConnectData{SessionID: sessionID})
 }
@@ -182,6 +182,22 @@ func (h *Handler) handleGetHistory(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	w.Header().Set("HX-Push-Url", "/?view=history")
 	ui.Render(w, "history.html", sessions)
+}
+
+// handleCancelDebate cancels an active debate and context.
+func (h *Handler) handleCancelDebate(w http.ResponseWriter, r *http.Request) {
+	sessionID := r.URL.Query().Get("session")
+	session := h.sessions.Get(sessionID)
+	if session != nil {
+		session.mu.Lock()
+		if session.Cancel != nil && session.Status == "running" {
+			session.Cancel()
+			glog.Infof("Cancelled session context: %s", sessionID)
+		}
+		session.mu.Unlock()
+		h.sessions.SetStatus(sessionID, "cancelled")
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // --- Private helpers ---

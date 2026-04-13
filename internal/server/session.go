@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 // SessionData holds the state for a single debate session.
 type SessionData struct {
 	mu               sync.RWMutex // Protects AgentOutputs
+	Cancel           context.CancelFunc
 	Prompt           string
 	AgentOutputs     map[string]string
 	Status           string // "running" or "completed"

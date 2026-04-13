@@ -15,6 +15,10 @@
             knownEvents.push(name);
         }
     };
-    es.onerror = function() { es.close(); };
+    es.onerror = function() { 
+        es.close(); 
+        var btn = document.getElementById('cancel-debate-btn');
+        if (btn) btn.style.display = 'none';
+    };
 })();
 </script>

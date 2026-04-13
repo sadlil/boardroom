@@ -39,7 +39,13 @@ func (h *Handler) handleSSEStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := r.Context()
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	session.mu.Lock()
+	session.Cancel = cancel
+	session.mu.Unlock()
+
 	var mu sync.Mutex
 
 	sendEvent := func(agentID, chunk string) {

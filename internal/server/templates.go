@@ -26,6 +26,7 @@ type AgentPanelData struct {
 
 // BoardData is passed to board.html.
 type BoardData struct {
+	SessionID        string
 	PulseClass       string
 	AgentPanels      []AgentPanelData
 	UseDynamicAgents bool
@@ -48,13 +49,14 @@ type DynamicPanelData struct {
 }
 
 // buildBoardData constructs the template data for the board layout.
-func buildBoardData(isLive bool, useDynamicAgents bool) BoardData {
+func buildBoardData(sessionID string, isLive bool, useDynamicAgents bool) BoardData {
 	pulseClass := ""
 	if isLive {
 		pulseClass = "animate-pulse streaming-pulse"
 	}
 
 	return BoardData{
+		SessionID:  sessionID,
 		PulseClass: pulseClass,
 		AgentPanels: []AgentPanelData{
 			{ID: "optimist", Title: "Optimist", Color: "emerald"},
