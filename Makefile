@@ -1,8 +1,8 @@
-.PHONY: all build fmt lint dep test clean
+.PHONY: all build fmt lint dep test clean css css-watch
 
-all: fmt lint build
+all: fmt lint css build
 
-build:
+build: css
 	go build -o bin/boardroom ./cmd/boardroom
 
 fmt:
@@ -26,7 +26,18 @@ test-v:
 
 clean:
 	go clean -i -r -x
-	rm -rf bin/
+	rm -rf bin/ node_modules/
+
+# CSS build targets (uses Tailwind CLI to generate static CSS)
+css:
+	@if command -v npx >/dev/null 2>&1; then \
+		npx tailwindcss -i ./ui/tailwind.css -o ./ui/styles.css --minify; \
+	else \
+		echo "⚠️  npx not found. Run 'npm install' first, or install Node.js."; \
+	fi
+
+css-watch:
+	npx tailwindcss -i ./ui/tailwind.css -o ./ui/styles.css --watch
 
 # Docker targets
 DOCKER_IMAGE ?= sadlil/boardroom

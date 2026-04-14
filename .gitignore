@@ -38,3 +38,10 @@ data/
 
 # Worktrees
 .worktree/
+
+# Node.js (CSS build tooling only)
+node_modules/
+package-lock.json
+
+# Generated CSS (rebuilt via `make css`)
+ui/styles.css
