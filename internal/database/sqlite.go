@@ -2,8 +2,10 @@ package database
 
 import (
 	"database/sql"
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/golang/glog"
 
@@ -92,15 +94,53 @@ func (s *SQLiteDB) SaveProfile(profileData string) error {
 	return err
 }
 
-// UpsertUserFact inserts or updates a user fact category.
+// UpsertUserFact appends a new fact to the given category. The value column
+// stores a JSON array of timestamped entries so facts accumulate over time
+// rather than being silently overwritten by each new Scribe extraction.
+//
+// Schema: user_facts(category TEXT PK, value TEXT JSON array, updated_at)
 func (s *SQLiteDB) UpsertUserFact(category, value string) error {
-	_, err := s.db.Exec(`
+	// Read the existing value (if any)
+	var existing string
+	err := s.db.QueryRow(`SELECT value FROM user_facts WHERE category = ?`, category).Scan(&existing)
+	if err != nil && err != sql.ErrNoRows {
+		return err
+	}
+
+	// Parse existing entries or start a new array
+	var entries []map[string]string
+	if existing != "" {
+		// Try parsing as JSON array (new format)
+		if jsonErr := json.Unmarshal([]byte(existing), &entries); jsonErr != nil {
+			// Legacy plain-text value — migrate it into the array format
+			entries = []map[string]string{{"value": existing, "at": "legacy"}}
+		}
+	}
+
+	// Deduplicate: skip if the exact same value is already the latest entry
+	if len(entries) > 0 && entries[len(entries)-1]["value"] == value {
+		return nil
+	}
+
+	// Append the new entry with a timestamp
+	entries = append(entries, map[string]string{
+		"value": value,
+		"at":    time.Now().UTC().Format(time.RFC3339),
+	})
+
+	// Re-serialize and write back
+	encoded, err := json.Marshal(entries)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(`
         INSERT INTO user_facts (category, value, updated_at) 
         VALUES (?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(category) DO UPDATE SET 
             value = excluded.value,
             updated_at = excluded.updated_at
-    `, category, value)
+    `, category, string(encoded))
 	return err
 }
 
@@ -109,7 +149,8 @@ func (s *SQLiteDB) DeleteUserFact(category string) error {
 	return err
 }
 
-// GetUserFacts returns all user facts as a map.
+// GetUserFacts returns all user facts as a map, with each category's value
+// being the latest entry from the accumulated JSON array.
 func (s *SQLiteDB) GetUserFacts() (map[string]string, error) {
 	rows, err := s.db.Query(`SELECT category, value FROM user_facts`)
 	if err != nil {
@@ -119,11 +160,20 @@ func (s *SQLiteDB) GetUserFacts() (map[string]string, error) {
 
 	facts := make(map[string]string)
 	for rows.Next() {
-		var category, value string
-		if err := rows.Scan(&category, &value); err != nil {
+		var category, rawValue string
+		if err := rows.Scan(&category, &rawValue); err != nil {
 			return nil, err
 		}
-		facts[category] = value
+
+		// Try to parse as JSON array (new accumulated format)
+		var entries []map[string]string
+		if json.Unmarshal([]byte(rawValue), &entries) == nil && len(entries) > 0 {
+			// Return the latest entry's value
+			facts[category] = entries[len(entries)-1]["value"]
+		} else {
+			// Legacy plain-text value — return as-is
+			facts[category] = rawValue
+		}
 	}
 	return facts, nil
 }
