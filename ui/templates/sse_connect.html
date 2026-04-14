@@ -3,11 +3,15 @@
 (function() {
     var knownEvents = ['user_persona','macroeconomist','optimist','pessimist','analyst','recruiter','decider','toast','dynamic_panel','error'];
     var es = new EventSource('/api/stream?id={{.SessionID}}');
+    var retryCount = 0;
+    var maxRetries = 5;
+
     function handler(e) {
         var evt = new CustomEvent('boardroom:sse', { detail: { type: e.type, data: e.data } });
         document.body.dispatchEvent(evt);
     }
     knownEvents.forEach(function(name) { es.addEventListener(name, handler); });
+
     // Expose a global function so the dynamic_panel handler can immediately register new agent listeners
     window.__registerDynAgent = function(name) {
         if (knownEvents.indexOf(name) === -1) {
@@ -15,10 +19,21 @@
             knownEvents.push(name);
         }
     };
-    es.onerror = function() { 
-        es.close(); 
-        var btn = document.getElementById('cancel-debate-btn');
-        if (btn) btn.style.display = 'none';
+
+    // The EventSource will auto-reconnect using Last-Event-Id.
+    // Only close permanently after max retries or when the debate completes.
+    es.onerror = function() {
+        retryCount++;
+        if (retryCount > maxRetries) {
+            es.close();
+            var btn = document.getElementById('cancel-debate-btn');
+            if (btn) btn.style.display = 'none';
+        }
+        // Otherwise let the browser's native reconnect handle it.
+        // It will send Last-Event-Id automatically to resume from the right position.
     };
+
+    // Reset retry counter on successful message
+    es.onmessage = function() { retryCount = 0; };
 })();
 </script>

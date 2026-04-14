@@ -103,10 +103,7 @@ func (h *Handler) handleGetSession(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		session.mu.RLock()
-		mem = make(map[string]string)
-		for k, v := range session.AgentOutputs {
-			mem[k] = v
-		}
+		mem = session.GetOutputs()
 		session.mu.RUnlock()
 		useDynamicAgents = session.UseDynamicAgents
 	}
@@ -164,6 +161,11 @@ func (h *Handler) handleStartDebate(w http.ResponseWriter, r *http.Request) {
 			glog.Errorf("Failed to save session to SQLite: %v", err)
 		}
 	}()
+
+	// Launch the debate pipeline in a background goroutine.
+	// It is NOT tied to this HTTP request's context, so the debate survives
+	// browser disconnects/reloads and the SSE handler can reconnect freely.
+	go h.runDebateBackground(sessionID)
 
 	w.Header().Set("HX-Push-Url", "?session="+sessionID)
 	w.Header().Set("Content-Type", "text/html")
