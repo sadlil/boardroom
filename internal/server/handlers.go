@@ -1,12 +1,14 @@
 package server
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"html/template"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/sadlil/boardroom/internal/agents"
@@ -140,8 +142,12 @@ func (h *Handler) handleStartDebate(w http.ResponseWriter, r *http.Request) {
 	fullPrompt := buildFullPrompt(prompt, previousContext, action)
 
 	// Wave 0: Clarification check (only on first submission)
+	// Apply a hard 15-minute timeout so a slow or unresponsive LLM model
+	// cannot hang the HTTP handler indefinitely.
 	if previousContext == "" {
-		clarification := h.checkClarification(r, fullPrompt)
+		clarifyCtx, clarifyCancel := context.WithTimeout(r.Context(), 15*time.Minute)
+		defer clarifyCancel()
+		clarification := h.checkClarification(r.WithContext(clarifyCtx), fullPrompt)
 		if clarification.NeedsContext && len(clarification.Questions) > 0 {
 			w.Header().Set("Content-Type", "text/html")
 			ui.Render(w, "clarification.html", ClarificationData{
