@@ -29,8 +29,11 @@ func init() {
 	}
 	Assets = http.FS(sys)
 
-	// Parse all HTML templates
-	Templates, err = template.ParseFS(templateContent, "templates/*.html")
+	// Parse all HTML templates with custom functions
+	funcMap := template.FuncMap{
+		"add": func(a, b int) int { return a + b },
+	}
+	Templates, err = template.New("").Funcs(funcMap).ParseFS(templateContent, "templates/*.html")
 	if err != nil {
 		panic("failed to parse templates: " + err.Error())
 	}

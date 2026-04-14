@@ -31,5 +31,6 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/memories", h.handleUpdateMemories)
 	mux.HandleFunc("POST /api/debate", h.handleStartDebate)
 	mux.HandleFunc("POST /api/cancel", h.handleCancelDebate)
+	mux.HandleFunc("DELETE /api/session", h.handleDeleteSession)
 	mux.HandleFunc("GET /api/stream", h.handleSSEStream)
 }

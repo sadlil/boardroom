@@ -179,9 +179,10 @@ func (s *SQLiteDB) GetUserFacts() (map[string]string, error) {
 }
 
 type SessionRecord struct {
-	ID        string
-	Prompt    string
-	CreatedAt string
+	ID             string
+	Prompt         string
+	CreatedAt      string
+	VerdictPreview string // First ~150 chars of the decider output (if available)
 }
 
 func (s *SQLiteDB) SaveSession(id, prompt string) error {
@@ -194,8 +195,29 @@ func (s *SQLiteDB) SaveSessionLog(sessionID, agentRole, content string) error {
 	return err
 }
 
-func (s *SQLiteDB) GetSessions() ([]SessionRecord, error) {
-	rows, err := s.db.Query(`SELECT id, prompt, created_at FROM sessions ORDER BY created_at DESC`)
+// GetSessions returns paginated sessions with optional keyword search and a
+// verdict preview from the decider's session log.
+func (s *SQLiteDB) GetSessions(search string, limit, offset int) ([]SessionRecord, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+
+	query := `
+		SELECT s.id, s.prompt, s.created_at, COALESCE(SUBSTR(l.content, 1, 150), '') as verdict
+		FROM sessions s
+		LEFT JOIN session_logs l ON l.session_id = s.id AND l.agent_role = 'decider'
+	`
+	var args []interface{}
+
+	if search != "" {
+		query += " WHERE s.prompt LIKE ?"
+		args = append(args, "%"+search+"%")
+	}
+
+	query += " GROUP BY s.id ORDER BY s.created_at DESC LIMIT ? OFFSET ?"
+	args = append(args, limit, offset)
+
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -204,12 +226,35 @@ func (s *SQLiteDB) GetSessions() ([]SessionRecord, error) {
 	var sessions []SessionRecord
 	for rows.Next() {
 		var r SessionRecord
-		if err := rows.Scan(&r.ID, &r.Prompt, &r.CreatedAt); err != nil {
+		if err := rows.Scan(&r.ID, &r.Prompt, &r.CreatedAt, &r.VerdictPreview); err != nil {
 			return nil, err
 		}
 		sessions = append(sessions, r)
 	}
 	return sessions, nil
+}
+
+// GetSessionCount returns the total number of sessions, optionally filtered by search.
+func (s *SQLiteDB) GetSessionCount(search string) (int, error) {
+	query := `SELECT COUNT(*) FROM sessions`
+	var args []interface{}
+	if search != "" {
+		query += " WHERE prompt LIKE ?"
+		args = append(args, "%"+search+"%")
+	}
+	var count int
+	err := s.db.QueryRow(query, args...).Scan(&count)
+	return count, err
+}
+
+// DeleteSession removes a session and its associated logs.
+func (s *SQLiteDB) DeleteSession(id string) error {
+	_, err := s.db.Exec(`DELETE FROM session_logs WHERE session_id = ?`, id)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.Exec(`DELETE FROM sessions WHERE id = ?`, id)
+	return err
 }
 
 func (s *SQLiteDB) GetSessionLogs(sessionID string) (map[string]string, error) {

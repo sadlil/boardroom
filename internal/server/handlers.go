@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -181,16 +182,52 @@ func (h *Handler) handleStartDebate(w http.ResponseWriter, r *http.Request) {
 	ui.Render(w, "sse_connect.html", SSEConnectData{SessionID: sessionID})
 }
 
-// handleGetHistory fetches past sessions and displays them.
+// handleGetHistory fetches past sessions with pagination and optional search.
 func (h *Handler) handleGetHistory(w http.ResponseWriter, r *http.Request) {
-	sessions, err := h.sqlite.GetSessions()
+	search := r.URL.Query().Get("q")
+	page := 0
+	if p := r.URL.Query().Get("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+	limit := 20
+	offset := page * limit
+
+	sessions, err := h.sqlite.GetSessions(search, limit, offset)
 	if err != nil {
 		http.Error(w, "Failed to load history", http.StatusInternalServerError)
 		return
 	}
+
+	total, _ := h.sqlite.GetSessionCount(search)
+	hasMore := offset+limit < total
+
 	w.Header().Set("Content-Type", "text/html")
 	w.Header().Set("HX-Push-Url", "/?view=history")
-	ui.Render(w, "history.html", sessions)
+	ui.Render(w, "history.html", HistoryData{
+		Sessions: sessions,
+		Search:   search,
+		Page:     page,
+		HasMore:  hasMore,
+	})
+}
+
+// handleDeleteSession removes a session and its logs from SQLite.
+func (h *Handler) handleDeleteSession(w http.ResponseWriter, r *http.Request) {
+	sessionID := r.URL.Query().Get("id")
+	if sessionID == "" {
+		http.Error(w, "Session ID required", http.StatusBadRequest)
+		return
+	}
+	if err := h.sqlite.DeleteSession(sessionID); err != nil {
+		glog.Errorf("Failed to delete session %s: %v", sessionID, err)
+		http.Error(w, "Failed to delete session", http.StatusInternalServerError)
+		return
+	}
+	glog.Infof("Deleted session %s", sessionID)
+	// Refresh the history view
+	h.handleGetHistory(w, r)
 }
 
 // handleCancelDebate cancels an active debate and context.

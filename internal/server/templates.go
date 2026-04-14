@@ -1,6 +1,10 @@
 package server
 
-import "html/template"
+import (
+	"html/template"
+
+	"github.com/sadlil/boardroom/internal/database"
+)
 
 // --- Template Data Structs ---
 
@@ -77,4 +81,12 @@ type MemoriesData struct {
 	CoreMemory   map[string]string
 	LearnedFacts map[string]string
 	Snippets     []MemorySnippet
+}
+
+// HistoryData is passed to history.html.
+type HistoryData struct {
+	Sessions []database.SessionRecord
+	Search   string
+	Page     int
+	HasMore  bool
 }
