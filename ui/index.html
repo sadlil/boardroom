@@ -167,10 +167,14 @@
   <script>
     const agentMemory = {};
 
-    // Reset memory on fresh debate
+    // Reset memory and wave-folding latches on fresh debate
     document.body.addEventListener('htmx:beforeSwap', function (e) {
-      if (e.detail.target.id === 'board-panels') {
+      if (e.detail.target.id === 'board-panels' || e.detail.target.id === 'app-container') {
         for (let key in agentMemory) delete agentMemory[key];
+        // Reset wave-folding latches so they work correctly for the next debate
+        window.hasFoldedWave1 = false;
+        window.hasFoldedWave2 = false;
+        window.hasFoldedWave25 = false;
       }
     });
 
@@ -282,12 +286,37 @@
           }
         }, 1500);
 
-        // Wave folding latches
+        // Wave folding latches + progress stepper advancement
+        function activateStep(stepId) {
+          let step = document.getElementById(stepId);
+          if (step && !step.classList.contains('bg-indigo-500/20')) {
+            step.classList.remove('bg-zinc-800/50', 'text-zinc-600', 'border-zinc-800/50');
+            step.classList.add('bg-indigo-500/20', 'text-indigo-300', 'border-indigo-500/30');
+            let dot = step.querySelector('span:first-child');
+            if (dot) { dot.classList.remove('bg-zinc-600'); dot.classList.add('bg-indigo-400', 'animate-pulse'); }
+          }
+        }
+        function completeStep(stepId) {
+          let step = document.getElementById(stepId);
+          if (step) {
+            step.classList.remove('bg-indigo-500/20', 'text-indigo-300', 'border-indigo-500/30');
+            step.classList.add('bg-emerald-500/10', 'text-emerald-400', 'border-emerald-500/20');
+            let dot = step.querySelector('span:first-child');
+            if (dot) { dot.classList.remove('bg-indigo-400', 'animate-pulse', 'bg-zinc-600'); dot.classList.add('bg-emerald-400'); }
+          }
+        }
+
         if (agentID === 'optimist' || agentID === 'pessimist' || agentID === 'analyst' || agentID === 'recruiter') {
           if (!window.hasFoldedWave1) {
             let wave1 = document.getElementById('wave1-details');
             if (wave1) wave1.removeAttribute('open');
             window.hasFoldedWave1 = true;
+            completeStep('step-wave1');
+          }
+          if (agentID === 'recruiter') {
+            activateStep('step-wave25');
+          } else {
+            activateStep('step-wave2');
           }
         }
 
@@ -296,12 +325,15 @@
             let wave2 = document.getElementById('wave2-details');
             if (wave2) wave2.removeAttribute('open');
             window.hasFoldedWave2 = true;
+            completeStep('step-wave2');
           }
           if (!window.hasFoldedWave25) {
             let wave25 = document.getElementById('wave25-details');
             if (wave25) wave25.removeAttribute('open');
             window.hasFoldedWave25 = true;
+            completeStep('step-wave25');
           }
+          activateStep('step-wave3');
 
           let wave3C = document.getElementById('wave3-container');
           if (wave3C) wave3C.classList.remove('opacity-0', 'translate-y-4');

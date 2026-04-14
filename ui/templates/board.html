@@ -1,5 +1,30 @@
 {{- /*gotype: github.com/sadlil/boardroom/internal/server.BoardData*/ -}}
 <div class="space-y-6 animate-fade-in w-full max-w-6xl mx-auto pb-24">
+    <!-- Wave Progress Stepper -->
+    <div class="flex items-center justify-center space-x-2 px-4 py-3" id="wave-progress">
+        <div id="step-wave1" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 transition-all duration-500">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 {{.PulseClass}}"></span>
+            <span>Context</span>
+        </div>
+        <svg class="w-4 h-4 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        <div id="step-wave2" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-zinc-800/50 text-zinc-600 border border-zinc-800/50 transition-all duration-500">
+            <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span>
+            <span>Debate</span>
+        </div>
+        <svg class="w-4 h-4 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        {{if .UseDynamicAgents}}
+        <div id="step-wave25" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-zinc-800/50 text-zinc-600 border border-zinc-800/50 transition-all duration-500">
+            <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span>
+            <span>Experts</span>
+        </div>
+        <svg class="w-4 h-4 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        {{end}}
+        <div id="step-wave3" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-zinc-800/50 text-zinc-600 border border-zinc-800/50 transition-all duration-500">
+            <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span>
+            <span>Verdict</span>
+        </div>
+    </div>
+
     <!-- WAVE 1: Context Analysis -->
     <details class="group bg-zinc-900/40 border border-zinc-800/60 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:border-zinc-700/60" open id="wave1-details">
         <summary class="px-6 py-4 text-zinc-400 font-semibold flex items-center cursor-pointer hover:text-zinc-200 transition-colors list-none outline-none">
