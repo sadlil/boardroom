@@ -84,13 +84,18 @@ func (h *Handler) handleConfig(w http.ResponseWriter, r *http.Request) {
 	ui.Render(w, "config_badge.html", ConfigData{Provider: provider, Model: model})
 }
 
-// handleGetSession restores a completed session from memory or db.
+// handleGetSession restores a session from memory or db.
+// For completed sessions, renders the static board with restored outputs.
+// For running sessions, also injects the SSE connect snippet so the client
+// resumes receiving live events.
 func (h *Handler) handleGetSession(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("id")
 	session := h.sessions.Get(sessionID)
 
 	var mem map[string]string
 	useDynamicAgents := false
+	isRunning := false
+	eventCount := 0
 
 	if session == nil {
 		logs, err := h.sqlite.GetSessionLogs(sessionID)
@@ -107,18 +112,31 @@ func (h *Handler) handleGetSession(w http.ResponseWriter, r *http.Request) {
 	} else {
 		session.mu.RLock()
 		mem = session.GetOutputs()
+		isRunning = session.Status == "running"
+		eventCount = len(session.Events)
 		session.mu.RUnlock()
 		useDynamicAgents = session.UseDynamicAgents
 	}
 
 	memJSON, _ := json.Marshal(mem)
-	boardHTML, _ := ui.RenderToString("board.html", buildBoardData(sessionID, false, useDynamicAgents))
+	boardHTML, _ := ui.RenderToString("board.html", buildBoardData(sessionID, isRunning, useDynamicAgents))
 
 	w.Header().Set("Content-Type", "text/html")
+	w.Header().Set("HX-Push-Url", "?session="+sessionID)
 	w.Write([]byte(boardHTML))
 	ui.Render(w, "session_restore.html", SessionRestoreData{
 		AgentOutputsJSON: template.JS(memJSON),
 	})
+
+	// For running sessions, also inject the SSE connect snippet so the client
+	// resumes receiving live events. FromEventIdx avoids replaying events that
+	// were already rendered by session_restore above.
+	if isRunning {
+		ui.Render(w, "sse_connect.html", SSEConnectData{
+			SessionID:    sessionID,
+			FromEventIdx: eventCount,
+		})
+	}
 }
 
 // handleStartDebate processes the debate form submission.

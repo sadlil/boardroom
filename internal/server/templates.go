@@ -43,7 +43,8 @@ type SessionRestoreData struct {
 
 // SSEConnectData is passed to sse_connect.html.
 type SSEConnectData struct {
-	SessionID string
+	SessionID    string
+	FromEventIdx int // Starting event index for SSE resume (0 = from start)
 }
 
 // DynamicPanelData is passed to dynamic_panel.html.

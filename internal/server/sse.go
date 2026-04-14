@@ -35,10 +35,15 @@ func (h *Handler) handleSSEStream(w http.ResponseWriter, r *http.Request) {
 	eventCount := len(session.Events)
 	session.mu.RUnlock()
 
-	// Determine the starting read position (support SSE reconnection)
+	// Determine the starting read position.
+	// Priority: Last-Event-Id header (native reconnect) > "from" query param (session resume) > 0
 	fromIdx := 0
 	if lastID := r.Header.Get("Last-Event-Id"); lastID != "" {
 		if parsed, err := strconv.Atoi(lastID); err == nil && parsed >= 0 {
+			fromIdx = parsed
+		}
+	} else if fromParam := r.URL.Query().Get("from"); fromParam != "" {
+		if parsed, err := strconv.Atoi(fromParam); err == nil && parsed >= 0 {
 			fromIdx = parsed
 		}
 	}
