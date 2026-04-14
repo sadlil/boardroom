@@ -2,9 +2,10 @@ package database
 
 import (
 	"database/sql"
-	"github.com/golang/glog"
 	"os"
 	"path/filepath"
+
+	"github.com/golang/glog"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -162,7 +163,7 @@ func (s *SQLiteDB) GetSessions() ([]SessionRecord, error) {
 }
 
 func (s *SQLiteDB) GetSessionLogs(sessionID string) (map[string]string, error) {
-	rows, err := s.db.Query(`SELECT agent_role, content FROM session_logs WHERE session_id = ?`, sessionID, )
+	rows, err := s.db.Query(`SELECT agent_role, content FROM session_logs WHERE session_id = ?`, sessionID)
 	if err != nil {
 		return nil, err
 	}

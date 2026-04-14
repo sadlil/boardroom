@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -68,7 +69,6 @@ func (h *Handler) handleSSEStream(w http.ResponseWriter, r *http.Request) {
 	err := h.orchestrator.RunDebate(ctx, session.Prompt, session.UseDynamicAgents, func(agentID, chunk string) {
 		sendEvent(agentID, chunk)
 	})
-
 	if err != nil {
 		glog.Errorf("Debate pipeline failed for session %s: %v\n", sessionID, err)
 		h.sessions.SetStatus(sessionID, "error")
@@ -90,7 +90,7 @@ func (h *Handler) handleSSEStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.sessions.MarkCompleted(sessionID)
-	
+
 	// Save outputs to SQLite
 	sessionData := h.sessions.Get(sessionID)
 	if sessionData != nil {

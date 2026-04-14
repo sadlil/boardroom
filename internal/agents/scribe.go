@@ -2,7 +2,6 @@ package agents
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -109,20 +108,11 @@ func (o *Orchestrator) runScribe(ctx context.Context, prompt, contextJSON string
 	}
 	glog.Infof("[Scribe] LLM responded: %d chars in %.2fs\n", len(output), time.Since(startTime).Seconds())
 
-	// Clean output (strip markdown code blocks if present)
-	cleaned := strings.TrimSpace(output)
-	if strings.HasPrefix(cleaned, "```") {
-		cleaned = strings.TrimPrefix(cleaned, "```json")
-		cleaned = strings.TrimPrefix(cleaned, "```")
-		cleaned = strings.TrimSuffix(cleaned, "```")
-		cleaned = strings.TrimSpace(cleaned)
-	}
-
-	// Parse JSON output
+	// Parse JSON output using the robust ExtractJSON helper
 	var result ScribeOutput
-	if err := json.Unmarshal([]byte(cleaned), &result); err != nil {
+	if err := ExtractJSON(output, &result); err != nil {
 		glog.Errorf("[Scribe] JSON parse failed: %v\n", err)
-		glog.Errorf("[Scribe] Raw output (first 500 chars): %.500s\n", cleaned)
+		glog.Errorf("[Scribe] Raw output (first 500 chars): %.500s\n", output)
 		return
 	}
 	glog.Info("[Scribe] JSON parsed successfully")

@@ -242,11 +242,18 @@ func (h *Handler) handleGetMemories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snippets := make([]MemorySnippet, 0, len(docs))
-	for _, doc := range docs {
+	// Cap snippets to maximum 50 to prevent massive DOM bloating
+	maxSnippets := 50
+	if len(docs) < maxSnippets {
+		maxSnippets = len(docs)
+	}
+
+	snippets := make([]MemorySnippet, 0, maxSnippets)
+	// Iterate to load up to maxSnippets (can optionally sort by recent later)
+	for i := 0; i < maxSnippets; i++ {
 		snippets = append(snippets, MemorySnippet{
-			ID:      doc.ID,
-			Content: doc.Content,
+			ID:      docs[i].ID,
+			Content: docs[i].Content,
 		})
 	}
 
