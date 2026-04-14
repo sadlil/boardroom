@@ -265,6 +265,21 @@
             pulse.classList.remove('animate-pulse');
             pulse.classList.add('opacity-30');
           }
+
+          // Show post-debate action bar when the decider finishes streaming
+          if (agentID === 'decider') {
+            let postActions = document.getElementById('post-debate-actions');
+            if (postActions) {
+              postActions.style.display = '';
+              // Trigger slide-in animation on next frame
+              requestAnimationFrame(() => {
+                postActions.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+              });
+            }
+            // Hide the cancel button
+            let cancelBtn = document.getElementById('cancel-debate-btn');
+            if (cancelBtn) cancelBtn.style.display = 'none';
+          }
         }, 1500);
 
         // Wave folding latches

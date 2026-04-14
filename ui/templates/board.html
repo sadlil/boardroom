@@ -132,4 +132,29 @@
             </div>
         </div>
     </div>
+
+    <!-- Post-Debate Action Bar (hidden until debate completes) -->
+    <div id="post-debate-actions" class="mt-6 opacity-0 translate-y-4 transition-all duration-700 ease-out pointer-events-none" style="display:none;">
+        <div class="bg-zinc-900/80 backdrop-blur-xl rounded-2xl p-6 border border-indigo-500/20 shadow-2xl shadow-indigo-500/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <div>
+                    <p class="text-zinc-200 font-semibold text-sm">Debate Complete</p>
+                    <p class="text-zinc-500 text-xs">Your board has reached a verdict.</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button hx-get="/api/history" hx-target="#board-panels" class="px-4 py-2 border border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800 rounded-xl text-sm text-zinc-300 transition flex items-center shadow-sm">
+                    <svg class="w-4 h-4 mr-2 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    View Past Debates
+                </button>
+                <button hx-get="/api/init" hx-target="#app-container" hx-swap="innerHTML" onclick="window.history.pushState({}, '', '/');" class="bg-indigo-500 hover:bg-indigo-400 text-white px-5 py-2 rounded-xl font-semibold tracking-wide transition-all shadow-lg shadow-indigo-500/20 flex items-center transform hover:scale-[1.02] active:scale-95">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    New Debate
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
