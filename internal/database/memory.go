@@ -110,8 +110,9 @@ func (m *VectorMemory) GetAllDocuments(ctx context.Context) ([]chromem.Document,
 		return []chromem.Document{}, nil
 	}
 
-	// Use an empty query to retrieve everything up to count
-	res, err := m.collection.Query(ctx, "", count, nil, nil)
+	// Query explicitly rejects empty strings in chromem-go v0.7.0, and there is no Get() method.
+	// We use a dummy string (e.g., "*") and set nResults to the total count to retrieve all documents.
+	res, err := m.collection.Query(ctx, "*", count, nil, nil)
 	if err != nil {
 		return nil, err
 	}
