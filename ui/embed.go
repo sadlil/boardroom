@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-//go:embed *.html
+//go:embed *.html styles.css
 var content embed.FS
 
 //go:embed templates/*.html
