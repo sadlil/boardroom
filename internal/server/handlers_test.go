@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sadlil/boardroom/internal/agents"
 	"github.com/sadlil/boardroom/internal/database"
@@ -104,6 +105,10 @@ func TestHandleStartDebate(t *testing.T) {
 	if !strings.HasPrefix(pushUrl, "?session=session_") {
 		t.Errorf("Expected HX-Push-Url to start with ?session=session_, got %v", pushUrl)
 	}
+
+	// Sleep briefly so the background goroutine saving the session to SQLite
+	// has time to finish before t.TempDir() blows away the database.
+	time.Sleep(50 * time.Millisecond)
 }
 
 func TestHandleOnboard(t *testing.T) {

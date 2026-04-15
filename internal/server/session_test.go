@@ -111,8 +111,8 @@ func TestSessionStore(t *testing.T) {
 func TestControlEventsSkipBuilder(t *testing.T) {
 	store := NewSessionStore()
 	id := store.Create("test", false)
-
-	// Toast and dynamic_panel events should NOT accumulate in builders
+	// Control events bypass the strings.Builder during stream, but GetOutputs
+	// materializes them from the event log so session_restore.html can use them.
 	store.AppendEvent(id, "toast", "<div>retry</div>")
 	store.AppendEvent(id, "dynamic_panel", "<div>panel</div>")
 	store.AppendEvent(id, "agent1", "real content")
@@ -120,11 +120,11 @@ func TestControlEventsSkipBuilder(t *testing.T) {
 	session := store.Get(id)
 	outputs := session.GetOutputs()
 
-	if _, exists := outputs["toast"]; exists {
-		t.Error("toast events should not be in builder outputs")
+	if outputs["toast"] != "<div>retry</div>" {
+		t.Errorf("Expected toast in outputs for restore, got '%s'", outputs["toast"])
 	}
-	if _, exists := outputs["dynamic_panel"]; exists {
-		t.Error("dynamic_panel events should not be in builder outputs")
+	if outputs["dynamic_panel"] != "<div>panel</div>" {
+		t.Errorf("Expected dynamic_panel in outputs for restore, got '%s'", outputs["dynamic_panel"])
 	}
 	if outputs["agent1"] != "real content" {
 		t.Errorf("Expected 'real content', got '%s'", outputs["agent1"])
