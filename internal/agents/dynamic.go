@@ -111,11 +111,6 @@ func (o *Orchestrator) runDynamicSourcing(
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			glog.Infof("Starting dynamic debate for agent: %s (%s)\n", name, id)
-			tempAgent := Agent{
-				ID:           id,
-				Name:         name,
-				SystemPrompt: sysPrompt,
-			}
 
 			out, _ := o.executeWithRetry(ctx, id, name, sysPrompt, []llm.Message{{Role: "user", Content: "Context Payload:\n" + contextJSON + "\n\nUser Prompt: " + prompt}}, callback)
 			if out != "" {
