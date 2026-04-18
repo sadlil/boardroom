@@ -10,7 +10,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/sadlil/boardroom/internal/llm"
 	"github.com/sadlil/boardroom/ui"
-	"github.com/tmc/langchaingo/tools"
 )
 
 // --- Wave 2.5: Dynamic Expert Sourcing ---
@@ -112,17 +111,13 @@ func (o *Orchestrator) runDynamicSourcing(
 			sem <- struct{}{}
 			defer func() { <-sem }()
 			glog.Infof("Starting dynamic debate for agent: %s (%s)\n", name, id)
-			// Prepare tools. Dynamic Experts get access to internet search.
-			expertTools := []tools.Tool{&SearchTool{}}
-
-			// Build a temporary agent payload
 			tempAgent := Agent{
 				ID:           id,
 				Name:         name,
 				SystemPrompt: sysPrompt,
 			}
 
-			out, _ := o.ReActExecutor(ctx, tempAgent, "Context Payload:\n"+contextJSON+"\n\nUser Prompt: "+prompt, expertTools, callback)
+			out, _ := o.executeWithRetry(ctx, id, name, sysPrompt, []llm.Message{{Role: "user", Content: "Context Payload:\n" + contextJSON + "\n\nUser Prompt: " + prompt}}, callback)
 			if out != "" {
 				mu.Lock()
 				*wave2Outputs = append(*wave2Outputs, FormatOutput(name, out))

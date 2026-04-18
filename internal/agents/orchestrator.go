@@ -13,6 +13,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/sadlil/boardroom/internal/database"
 	"github.com/sadlil/boardroom/internal/llm"
+	"github.com/tmc/langchaingo/tools"
 )
 
 // Orchestrator manages the sequential multi-wave debate pipeline.
@@ -155,8 +156,17 @@ Reference specific profile details and past decisions when relevant.
 				evalAgent = augmentedChiefOfStaff
 			}
 
-			fullResponse, err := o.executeWithRetry(ctx, evalAgent.ID, evalAgent.Name, evalAgent.SystemPrompt,
-				[]llm.Message{{Role: "user", Content: prompt}}, callback)
+			var fullResponse string
+			var err error
+
+			if evalAgent.ID == ChiefEconomist.ID {
+				// Give the Chief Economist access to the SearchTool
+				fullResponse, err = o.ReActExecutor(ctx, evalAgent, prompt, []tools.Tool{&SearchTool{}}, callback)
+			} else {
+				fullResponse, err = o.executeWithRetry(ctx, evalAgent.ID, evalAgent.Name, evalAgent.SystemPrompt,
+					[]llm.Message{{Role: "user", Content: prompt}}, callback)
+			}
+
 			if err == nil {
 				mu.Lock()
 				if evalAgent.ID == ChiefOfStaff.ID {
