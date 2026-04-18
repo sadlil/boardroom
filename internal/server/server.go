@@ -38,6 +38,22 @@ func NewServer(sqlite *database.SQLiteDB, memory *database.VectorMemory, orchest
 	}
 }
 
+// NewTestMux exposes the registered http.ServeMux directly for testing environments.
+func NewTestMux(sqlite *database.SQLiteDB, memory *database.VectorMemory, orchestrator *agents.Orchestrator) *http.ServeMux {
+	mux := http.NewServeMux()
+	h := &Handler{
+		sqlite:       sqlite,
+		memory:       memory,
+		orchestrator: orchestrator,
+		sessions:     NewSessionStore(),
+	}
+	h.Register(mux)
+	// We wrap it in SecurityMiddleware but we could omit. 
+	// For httptest, it's easiest to return mux directly or wrapped handler.
+	// Actually, let's just return the wrapped handler.
+	return mux // return mux so caller can wrap or not
+}
+
 // ListenAndServe starts listening for HTTP connections.
 func (s *Server) ListenAndServe() error {
 	return s.httpServer.ListenAndServe()

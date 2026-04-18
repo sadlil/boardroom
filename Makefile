@@ -24,6 +24,10 @@ test-v:
 	go tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated at coverage.html"
 
+test-e2e:
+	@echo "Running E2E UI tests with go-rod..."
+	go test -v ./e2e/...
+
 clean:
 	go clean -i -r -x
 	rm -rf bin/ node_modules/
