@@ -15,7 +15,7 @@ func TestCoreDebateFlow(t *testing.T) {
 	// (Though they might share the DB instance, we ensure we are at the command center)
 	// If onboarding is visible, let's wait for it or just directly load the page.
 	// Actually, let's just make sure we fill it out if it appears.
-	if ok, _ := page.Has("input[name='role']"); ok {
+	if ok, _, _ := page.Has("input[name='role']"); ok {
 		page.MustElement("input[name='role']").MustInput("Dev")
 		page.MustElement("input[name='industry']").MustInput("IT")
 		page.MustElement("button[type='submit']").MustClick()

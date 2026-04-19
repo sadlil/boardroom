@@ -2,11 +2,12 @@ package e2e
 
 import (
 	"context"
-	"net/http"
+	"fmt"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/sadlil/boardroom/internal/agents"
@@ -21,25 +22,33 @@ var (
 )
 
 // TestMain acts as the orchestrator for all e2e tests.
-func TestMain(m *testing.T) {
+func TestMain(m *testing.M) {
+	code, err := runTests(m)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "E2E Setup Failed: %v\n", err)
+		os.Exit(1)
+	}
+	os.Exit(code)
+}
+
+func runTests(m *testing.M) (int, error) {
 	// 1. Traverse up to repository root so html templates load properly
-	// e2e tests run from `/e2e` directory, but UI templates are at relative `./ui`.
 	err := os.Chdir("..")
 	if err != nil {
-		panic("Failed to chdir to project root: " + err.Error())
+		return 0, fmt.Errorf("failed to chdir to project root: %w", err)
 	}
 
 	// 2. Setup mock dependencies
 	tempDir, err := os.MkdirTemp("", "boardroom-e2e")
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 	defer os.RemoveAll(tempDir)
 
 	sqlitePath := filepath.Join(tempDir, "e2e.db")
 	sqlite, err := database.NewSQLiteDB(sqlitePath)
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 	defer sqlite.Close()
 
@@ -49,27 +58,31 @@ func TestMain(m *testing.T) {
 	}
 	memory, err := database.NewVectorMemory(vectorPath, mockEmbed)
 	if err != nil {
-		panic(err)
+		return 0, err
 	}
 
-	// Use fake LLM client so tests are fast and free
 	llmClient := fake.NewClient()
 	orchestrator := agents.NewOrchestrator(llmClient, sqlite, memory)
 
-	// Inject test handler using exposed test helper
 	router := server.NewTestMux(sqlite, memory, orchestrator)
-	
-	// Start test server
 	testServer = httptest.NewServer(router)
 	defer testServer.Close()
+	fmt.Printf("E2E Test Server started at: %s\n", testServer.URL)
 
-	// 3. Launch go-rod headless browser
-	// By default, it automatically downloads Chromium if it doesn't find it.
-	browser = rod.New().MustConnect()
-	defer browser.MustClose()
+	// 3. Launch go-rod headless browser with connection timeout
+	fmt.Println("Connecting to browser (may download Chromium if missing)...")
+	
+	// Create a context with a 2-minute deadline for the browser connection/download
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	browser = rod.New().Context(ctx)
+	if err := browser.Connect(); err != nil {
+		return 0, fmt.Errorf("failed to connect to browser within 2m: %w", err)
+	}
+	defer browser.Close()
+	fmt.Println("Browser connected successfully.")
 
 	// Run tests
-	code := m.Run()
-
-	os.Exit(code)
+	return m.Run(), nil
 }

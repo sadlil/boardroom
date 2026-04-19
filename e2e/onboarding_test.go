@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"testing"
-	"time"
 )
 
 func TestOnboardingFlow(t *testing.T) {

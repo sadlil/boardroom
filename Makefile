@@ -26,7 +26,7 @@ test-v:
 
 test-e2e:
 	@echo "Running E2E UI tests with go-rod..."
-	go test -v ./e2e/...
+	MAX_CONCURRENT_AGENTS=1 MAX_SESSIONS=5 go test -timeout 1h -v ./e2e/...
 
 clean:
 	go clean -i -r -x
